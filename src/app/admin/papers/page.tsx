@@ -33,7 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search, Loader2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search, Loader2, Copy } from "lucide-react";
 import { fetchPapers } from "@/lib/paper-service";
 import { fetchCategories, getCategoryPath, getFlattenedCategories } from "@/lib/category-service";
 import type { Category, Paper } from "@/types";
@@ -269,6 +269,12 @@ export default function AdminPapersPage() {
                                 <Link href={`/admin/papers/${paper.id}/edit`}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit Details
+                                </Link>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem asChild>
+                                <Link href={`/admin/papers/copy/${paper.id}`}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Copy Paper
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
