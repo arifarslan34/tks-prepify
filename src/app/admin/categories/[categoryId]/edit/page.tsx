@@ -23,10 +23,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { fetchCategories, getFlattenedCategories, clearCategoriesCache, getDescendantCategoryIds, getCategoryById } from "@/lib/category-service";
+import { fetchCategories, getFlattenedCategories, clearCategoriesCache, getDescendantCategoryIds } from "@/lib/category-service";
 import type { Category } from "@/types";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, writeBatch, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { slugify } from "@/lib/utils";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -101,12 +102,64 @@ export default function EditCategoryPage() {
     setIsSubmitting(true);
     try {
       const categoryRef = doc(db, "categories", categoryId);
-      await updateDoc(categoryRef, {
+      const oldCategorySnap = await getDoc(categoryRef);
+      const oldSlug = oldCategorySnap.data()?.slug;
+
+      const newParentId = data.parentId === 'none' || !data.parentId ? null : data.parentId;
+      let newSlug = slugify(data.name);
+
+      if (newParentId) {
+        const parentRef = doc(db, 'categories', newParentId);
+        const parentSnap = await getDoc(parentRef);
+        if (parentSnap.exists()) {
+          newSlug = `${parentSnap.data().slug}/${slugify(data.name)}`;
+        }
+      }
+
+      const updatedData = {
         name: data.name,
         description: data.description,
-        parentId: data.parentId === 'none' || !data.parentId ? null : data.parentId,
+        parentId: newParentId,
         featured: data.featured || false,
-      });
+        slug: newSlug,
+      };
+
+      if (oldSlug === newSlug) {
+        // If slug hasn't changed, only name/description/featured might have.
+        // A simple update is enough.
+        await updateDoc(categoryRef, {
+            name: data.name,
+            description: data.description,
+            parentId: newParentId,
+            featured: data.featured,
+        });
+      } else {
+        // If slug has changed, we need a batch write to update all descendants.
+        const batch = writeBatch(db);
+        batch.update(categoryRef, updatedData);
+
+        // Recursive function to update slugs of all descendants
+        const updateDescendants = async (currentParentId: string, currentParentSlug: string) => {
+          const q = query(collection(db, 'categories'), where('parentId', '==', currentParentId));
+          const childrenSnapshot = await getDocs(q);
+          
+          for (const childDoc of childrenSnapshot.docs) {
+            const childData = childDoc.data();
+            // Re-slugify the child's own name to get its local slug part
+            const childLocalSlug = slugify(childData.name); 
+            const newChildSlug = `${currentParentSlug}/${childLocalSlug}`;
+            
+            const childRef = doc(db, 'categories', childDoc.id);
+            batch.update(childRef, { slug: newChildSlug });
+
+            // Recurse for grandchildren
+            await updateDescendants(childDoc.id, newChildSlug);
+          }
+        };
+
+        await updateDescendants(categoryId, newSlug);
+        await batch.commit();
+      }
 
       clearCategoriesCache();
 

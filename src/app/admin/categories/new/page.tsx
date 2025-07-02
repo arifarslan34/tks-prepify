@@ -24,7 +24,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import React, { useState, useEffect, useMemo } from "react";
 import { fetchCategories, getFlattenedCategories, clearCategoriesCache } from "@/lib/category-service";
 import type { Category } from "@/types";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Switch } from "@/components/ui/switch";
 import { slugify } from "@/lib/utils";
@@ -66,14 +66,14 @@ function NewCategoryPageComponent() {
 
   const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
 
-  const parentId = searchParams.get("parentId") || undefined;
+  const parentIdParam = searchParams.get("parentId") || undefined;
   
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: "",
       description: "",
-      parentId: parentId === "none" ? undefined : parentId,
+      parentId: parentIdParam === "none" ? undefined : parentIdParam,
       featured: false,
     },
   });
@@ -81,13 +81,26 @@ function NewCategoryPageComponent() {
   async function onSubmit(data: CategoryFormValues) {
     setIsSubmitting(true);
     try {
-      const categoryData: { name: string; description: string; parentId?: string | null; featured?: boolean; slug: string; } = {
+      const parentId = data.parentId === 'none' || !data.parentId ? null : data.parentId;
+      let fullSlug = slugify(data.name);
+
+      if (parentId) {
+        const parentRef = doc(db, "categories", parentId);
+        const parentSnap = await getDoc(parentRef);
+        if (parentSnap.exists()) {
+          const parentSlug = parentSnap.data().slug || '';
+          fullSlug = `${parentSlug}/${slugify(data.name)}`;
+        }
+      }
+
+      const categoryData = {
         name: data.name,
         description: data.description,
-        parentId: data.parentId === 'none' || !data.parentId ? null : data.parentId,
+        parentId: parentId,
         featured: data.featured || false,
-        slug: slugify(data.name),
+        slug: fullSlug,
       };
+
 
       await addDoc(collection(db, "categories"), categoryData);
       
