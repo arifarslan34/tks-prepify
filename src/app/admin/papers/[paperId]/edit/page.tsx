@@ -115,7 +115,8 @@ export default function EditPaperPage() {
     const title = form.getValues("title");
     const categoryId = form.getValues("categoryId");
     const rawYear = form.getValues("year");
-    const session = form.getValues("session");
+    const sessionValue = form.getValues("session");
+    const session = sessionValue === 'none' ? undefined : sessionValue;
 
     let year: number | undefined = undefined;
     if (rawYear && String(rawYear).trim()) {
@@ -150,7 +151,8 @@ export default function EditPaperPage() {
     const description = form.getValues("description");
     const categoryId = form.getValues("categoryId");
     const rawYear = form.getValues("year");
-    const session = form.getValues("session");
+    const sessionValue = form.getValues("session");
+    const session = sessionValue === 'none' ? undefined : sessionValue;
 
     let year: number | undefined = undefined;
     if (rawYear && String(rawYear).trim()) {
@@ -191,7 +193,8 @@ export default function EditPaperPage() {
         }
         const category = getCategoryById(data.categoryId, allCategories);
         const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
-        const titleSlug = slugify(`${data.title} ${data.year || ''} ${data.session || ''}`.trim());
+        const sessionForSlug = data.session === 'none' ? '' : data.session || '';
+        const titleSlug = slugify(`${data.title} ${data.year || ''} ${sessionForSlug}`.trim());
 
         if (categorySlug) {
             return `${categorySlug}-${titleSlug}`;
@@ -204,7 +207,7 @@ export default function EditPaperPage() {
           ...data,
           slug: getSlug(),
           published: data.published || false,
-          session: data.session || null,
+          session: data.session === 'none' || !data.session ? null : data.session,
       };
       await updateDoc(paperRef, paperData);
       toast({
@@ -396,14 +399,14 @@ export default function EditPaperPage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Session (Optional)</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                                <Select onValueChange={field.onChange} value={field.value || ''} disabled={isSubmitting}>
                                     <FormControl>
                                         <SelectTrigger>
                                         <SelectValue placeholder="Select a session" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="">None</SelectItem>
+                                        <SelectItem value="none">None</SelectItem>
                                         <SelectItem value="Fall">Fall</SelectItem>
                                         <SelectItem value="Spring">Spring</SelectItem>
                                         <SelectItem value="Summer">Summer</SelectItem>
