@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { papers as allPapers } from '@/lib/data';
+import { fetchPapers } from '@/lib/paper-service';
 import { fetchCategories, getFlattenedCategories, getDescendantCategoryIds, getCategoryById } from '@/lib/category-service';
-import type { Category } from '@/types';
+import type { Category, Paper } from '@/types';
 import { Search, Bookmark, Clock, ListChecks, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,32 +17,45 @@ export default function AllPapersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [allPapers, setAllPapers] = useState<Paper[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
         setLoading(true);
-        const cats = await fetchCategories();
-        setAllCategories(cats);
-        setLoading(false);
+        try {
+            const [cats, papersData] = await Promise.all([
+                fetchCategories(),
+                fetchPapers(),
+            ]);
+            setAllCategories(cats);
+            setAllPapers(papersData);
+        } catch (error) {
+            console.error("Failed to load data:", error);
+        } finally {
+            setLoading(false);
+        }
     };
     loadData();
   }, []);
   
   const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
 
-  const filteredPapers = allPapers.filter(paper => {
-    let matchesCategory = true;
-    if (selectedCategory !== 'all') {
-      const descendantIds = getDescendantCategoryIds(selectedCategory, allCategories);
-      matchesCategory = descendantIds.includes(paper.categoryId);
-    }
+  const filteredPapers = useMemo(() => {
+    if (loading) return [];
+    return allPapers.filter(paper => {
+      let matchesCategory = true;
+      if (selectedCategory !== 'all') {
+        const descendantIds = getDescendantCategoryIds(selectedCategory, allCategories);
+        matchesCategory = descendantIds.includes(paper.categoryId);
+      }
 
-    const categoryName = getCategoryById(paper.categoryId, allCategories)?.name || '';
-    const matchesSearch = paper.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      categoryName.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+      const categoryName = getCategoryById(paper.categoryId, allCategories)?.name || '';
+      const matchesSearch = paper.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        categoryName.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [allPapers, allCategories, loading, searchTerm, selectedCategory]);
 
   return (
     <div className="container mx-auto px-16 py-8 md:py-12">

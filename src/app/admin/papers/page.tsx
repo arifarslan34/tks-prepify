@@ -1,8 +1,9 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -19,45 +20,101 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search, Loader2 } from "lucide-react";
-import { papers as allPapers } from "@/lib/data";
-import { fetchCategories, getCategoryPath, getFlattenedCategories } from "@/lib/category-service";
-import type { Category } from "@/types";
+import { fetchPapers } from "@/lib/paper-service";
+import { fetchCategories, getCategoryPath, getFlattenedCategories, getCategoryById } from "@/lib/category-service";
+import type { Category, Paper } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 export default function AdminPapersPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const router = useRouter();
   const { toast } = useToast();
   
+  const [allPapers, setAllPapers] = useState<Paper[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [paperToDelete, setPaperToDelete] = useState<Paper | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+        const [papers, cats] = await Promise.all([fetchPapers(), fetchCategories()]);
+        setAllPapers(papers);
+        setAllCategories(cats);
+    } catch (error) {
+        console.error("Failed to load data:", error);
+        toast({ title: "Error", description: "Could not load papers or categories.", variant: "destructive" });
+    } finally {
+        setLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    const loadData = async () => {
-        setLoading(true);
-        const cats = await fetchCategories();
-        setAllCategories(cats);
-        setLoading(false);
-    };
     loadData();
-  }, []);
+  }, [loadData]);
   
   const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
 
-  const papers = allPapers.filter(paper => {
+  const papers = useMemo(() => allPapers.filter(paper => {
       const matchesSearch = paper.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === "all" || paper.categoryId.startsWith(selectedCategory);
       return matchesSearch && matchesCategory;
-  });
+  }), [allPapers, searchTerm, selectedCategory]);
+
+  const openDeleteDialog = (paper: Paper) => {
+    setPaperToDelete(paper);
+    setDeleteAlertOpen(true);
+  }
+
+  const handleDeletePaper = async () => {
+    if (!paperToDelete) return;
+    setIsDeleting(true);
+    try {
+        await deleteDoc(doc(db, "papers", paperToDelete.id));
+        toast({
+            title: "Paper Deleted",
+            description: `"${paperToDelete.title}" has been successfully deleted.`
+        });
+        await loadData(); // Refetch data
+        router.refresh();
+    } catch (error) {
+        console.error("Error deleting paper:", error);
+        toast({
+            title: "Error",
+            description: "Failed to delete the paper. Please try again.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsDeleting(false);
+        setDeleteAlertOpen(false);
+    }
+  }
 
   return (
+    <>
     <div>
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
@@ -111,10 +168,11 @@ export default function AdminPapersPage() {
             <Table>
                 <TableHeader>
                 <TableRow>
-                    <TableHead>Title</TableHead>
+                    <TableHead className="w-[30%]" >Title</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Slug</TableHead>
                     <TableHead className="text-center">Questions</TableHead>
-                    <TableHead className="text-center">Duration (min)</TableHead>
+                    <TableHead className="text-center">Duration</TableHead>
                     <TableHead>
                     <span className="sr-only">Actions</span>
                     </TableHead>
@@ -130,6 +188,7 @@ export default function AdminPapersPage() {
                         <TableCell>
                         <Badge variant="outline">{categoryName}</Badge>
                         </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">{paper.slug}</TableCell>
                         <TableCell className="text-center">{paper.questionCount}</TableCell>
                         <TableCell className="text-center">{paper.duration}</TableCell>
                         <TableCell className="text-right">
@@ -157,10 +216,7 @@ export default function AdminPapersPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                                 className="text-destructive"
-                                onClick={() => toast({
-                                    title: "Paper Deleted (simulation)",
-                                    description: `The paper "${paper.title}" will be deleted.`,
-                                })}
+                                onSelect={() => openDeleteDialog(paper)}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
@@ -177,5 +233,24 @@ export default function AdminPapersPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                paper "{paperToDelete?.title}".
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePaper} disabled={isDeleting}>
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

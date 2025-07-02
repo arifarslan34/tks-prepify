@@ -191,15 +191,3 @@ export function getCategoryPath(id: string, allCategories: Category[]): Category
   }
   return findPath(allCategories, id, []);
 }
-
-// Keep a sync version for mock data in other parts of the app
-export function getPaperById(id: string): Paper | undefined {
-  // This function will need to be updated when papers are moved to Firestore
-  const { papers } = require('@/lib/data');
-  return papers.find((paper: Paper) => paper.id === id);
-}
-
-export function getPaperBySlug(slug: string): Paper | undefined {
-  const { papers } = require('@/lib/data');
-  return papers.find((paper: Paper) => paper.slug === slug);
-}

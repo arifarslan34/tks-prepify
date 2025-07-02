@@ -2,16 +2,20 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { papers } from '@/lib/data';
-import { fetchCategories, getDescendantCategoryIds } from '@/lib/category-service';
+import { fetchPapers } from '@/lib/paper-service';
+import { fetchCategories, getDescendantCategoryIds, getCategoryById } from '@/lib/category-service';
 import { ArrowRight, Bookmark, FileText, Folder } from 'lucide-react';
 import Image from 'next/image';
-import { getCategoryById } from '@/lib/category-service';
 
 export default async function Home() {
-  const allCategories = await fetchCategories();
-  const featuredCategories = allCategories.filter(c => c.featured).slice(0, 4);
+  const [allCategories, allPapers] = await Promise.all([
+    fetchCategories(),
+    fetchPapers()
+  ]);
 
+  const featuredCategories = allCategories.filter(c => c.featured && !c.subcategories?.length).slice(0, 4);
+  const featuredPapers = allPapers.filter(p => p.featured).slice(0, 3);
+  
   return (
     <>
       {/* Hero Section */}
@@ -49,13 +53,13 @@ export default async function Home() {
       {/* Categories Section */}
       <section id="categories" className="container mx-auto px-16 py-16 md:py-24">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore by Category</h2>
+          <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore Featured Categories</h2>
           <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {featuredCategories.length > 0 ? (
             featuredCategories.map((category) => {
-              const paperCount = papers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId)).length;
+              const paperCount = allPapers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId)).length;
               const subCategoryCount = category.subcategories?.length || 0;
 
               return (
@@ -120,7 +124,7 @@ export default async function Home() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {papers.slice(0, 3).map((paper) => {
+            {featuredPapers.map((paper) => {
               const category = getCategoryById(paper.categoryId, allCategories);
               return (
               <Card key={paper.id} className="flex flex-col">

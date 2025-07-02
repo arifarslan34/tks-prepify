@@ -6,29 +6,41 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Users, Folder, PlusCircle, ArrowUpRight, HelpCircle, Loader2 } from 'lucide-react';
-import { papers, questions as allQuestions, users } from '@/lib/data';
+import { questions as allQuestions, users } from '@/lib/data';
 import { fetchCategories, getCategoryPath, getFlattenedCategories } from '@/lib/category-service';
-import type { Category } from '@/types';
+import { fetchPapers } from '@/lib/paper-service';
+import type { Category, Paper } from '@/types';
 import Link from 'next/link';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function AdminDashboardPage() {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [allPapers, setAllPapers] = useState<Paper[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadData = async () => {
-        setLoading(true);
-        const cats = await fetchCategories();
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+        const [cats, papersData] = await Promise.all([
+            fetchCategories(),
+            fetchPapers()
+        ]);
         setAllCategories(cats);
+        setAllPapers(papersData);
+    } catch(error) {
+        console.error("Failed to load dashboard data:", error);
+    } finally {
         setLoading(false);
-    };
-    loadData();
+    }
   }, []);
 
-  const totalPapers = papers.length;
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const totalPapers = allPapers.length;
   const totalCategories = useMemo(() => getFlattenedCategories(allCategories).length, [allCategories]);
   const totalQuestions = allQuestions.length;
   const totalUsers = users.length;
@@ -37,10 +49,10 @@ export default function AdminDashboardPage() {
     .filter(c => !c.parentId) // only top level
     .map(category => ({
       name: category.name,
-      total: papers.filter(paper => paper.categoryId.startsWith(category.id)).length,
-  })), [allCategories]);
+      total: allPapers.filter(paper => paper.categoryId.startsWith(category.id)).length,
+  })), [allCategories, allPapers]);
 
-  const recentPapers = papers.slice(-5).reverse();
+  const recentPapers = useMemo(() => [...allPapers].sort((a, b) => b.id.localeCompare(a.id)).slice(0, 5), [allPapers]);
   const recentUsers = users.slice(-5).reverse();
   
   if (loading) {

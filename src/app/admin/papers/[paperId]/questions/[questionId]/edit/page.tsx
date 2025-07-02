@@ -21,8 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, PlusCircle, Trash2 } from "lucide-react";
-import { getQuestionById } from "@/lib/data";
-import { getPaperById } from "@/lib/category-service";
+import { getQuestionById, getMockPaperById } from "@/lib/data";
 import React, { useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -65,7 +64,7 @@ export default function EditQuestionPage() {
   const paperId = params.paperId as string;
   const questionId = params.questionId as string;
   
-  const paper = getPaperById(paperId);
+  const paper = getMockPaperById(paperId);
   const question = getQuestionById(questionId);
 
   const form = useForm<QuestionFormValues>({

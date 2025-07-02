@@ -4,7 +4,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { BarChart, Book, CheckCircle2, Lightbulb, Loader2, XCircle } from 'lucide-react';
-import { papers, questions as allQuestions } from '@/lib/data';
+import { questions as allQuestions } from '@/lib/data';
+import { fetchPapers } from '@/lib/paper-service';
 import { fetchCategories, getCategoryPath } from '@/lib/category-service';
 import type { Paper, Question, UserAnswer, TestResult, Category } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -30,58 +31,65 @@ export default function ResultsPage() {
   const [feedback, setFeedback] = useState<FeedbackState>({});
   const [recommendations, setRecommendations] = useState({ loading: false, content: '' });
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [allPapers, setAllPapers] = useState<Paper[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCategories = async () => {
-        setLoadingCategories(true);
-        const cats = await fetchCategories();
-        setAllCategories(cats);
-        setLoadingCategories(false);
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [cats, papers] = await Promise.all([fetchCategories(), fetchPapers()]);
+            setAllCategories(cats);
+            setAllPapers(papers);
+
+            const storedResults = localStorage.getItem('latestTestResults');
+            if (storedResults) {
+                const { paperId, answers: userAnswersArray } = JSON.parse(storedResults);
+                const paper = papers.find(p => p.id === paperId);
+                const questions = allQuestions.filter(q => q.paperId === paperId);
+
+                if (paper && questions.length > 0) {
+                    let score = 0;
+                    const processedAnswers: UserAnswer[] = questions.map((q, index) => {
+                    const userAnswer = userAnswersArray[index];
+                    const isCorrect = Array.isArray(q.correctAnswer) 
+                        ? q.correctAnswer.includes(userAnswer)
+                        : q.correctAnswer === userAnswer;
+                        
+                    if (isCorrect) score++;
+                    return {
+                        questionId: q.id,
+                        selectedOption: userAnswer,
+                        isCorrect,
+                        timeSpent: 0, // Simplified for this example
+                    };
+                    });
+
+                    setResult({
+                    id: params.testId as string,
+                    paper,
+                    answers: processedAnswers,
+                    score,
+                    totalTimeSpent: 0, // Simplified
+                    completedAt: new Date(),
+                    });
+                }
+            } else {
+                router.push('/papers');
+            }
+        } catch(e) {
+            console.error(e);
+            router.push('/papers');
+        } finally {
+            setLoading(false);
+        }
     }
-    loadCategories();
-  }, []);
-
-  useEffect(() => {
-    const storedResults = localStorage.getItem('latestTestResults');
-    if (storedResults) {
-      const { paperId, answers: userAnswersArray } = JSON.parse(storedResults);
-      const paper = papers.find(p => p.id === paperId);
-      const questions = allQuestions.filter(q => q.paperId === paperId);
-
-      if (paper && questions.length > 0) {
-        let score = 0;
-        const processedAnswers: UserAnswer[] = questions.map((q, index) => {
-          const userAnswer = userAnswersArray[index];
-          const isCorrect = Array.isArray(q.correctAnswer) 
-            ? q.correctAnswer.includes(userAnswer)
-            : q.correctAnswer === userAnswer;
-            
-          if (isCorrect) score++;
-          return {
-            questionId: q.id,
-            selectedOption: userAnswer,
-            isCorrect,
-            timeSpent: 0, // Simplified for this example
-          };
-        });
-
-        setResult({
-          id: params.testId as string,
-          paper,
-          answers: processedAnswers,
-          score,
-          totalTimeSpent: 0, // Simplified
-          completedAt: new Date(),
-        });
-      }
-    } else {
-      router.push('/papers');
-    }
+    loadData();
   }, [params.testId, router]);
 
+
   const handleGetFeedback = async (question: Question, userAnswer: string) => {
-    if (!result || loadingCategories) return;
+    if (!result || loading) return;
     setFeedback(prev => ({ ...prev, [question.id]: { loading: true } }));
 
     const path = getCategoryPath(result.paper.categoryId, allCategories);
@@ -131,7 +139,7 @@ export default function ResultsPage() {
     return [{ name: "Performance", correct: correctCount, incorrect: incorrectCount }];
   }, [result]);
 
-  if (!result) {
+  if (loading || !result) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
@@ -200,7 +208,7 @@ export default function ResultsPage() {
                           {question.explanation && <p className="text-muted-foreground"><span className="font-semibold">Explanation:</span> {question.explanation}</p>}
                           {!answer.isCorrect && (
                             <div className="p-4 bg-secondary/50 rounded-lg">
-                              <Button size="sm" onClick={() => handleGetFeedback(question, answer.selectedOption)} disabled={questionFeedback?.loading || loadingCategories}>
+                              <Button size="sm" onClick={() => handleGetFeedback(question, answer.selectedOption)} disabled={questionFeedback?.loading || loading}>
                                 {questionFeedback?.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
                                 Get AI Feedback
                               </Button>

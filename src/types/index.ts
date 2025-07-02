@@ -22,6 +22,10 @@ export interface Paper {
   duration: number; // in minutes
   year?: number;
   featured?: boolean;
+  // SEO fields
+  keywords?: string;
+  metaTitle?: string;
+  metaDescription?: string;
 }
 
 export interface Question {

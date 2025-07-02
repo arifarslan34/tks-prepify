@@ -1,15 +1,16 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { papers, questions as allQuestions } from '@/lib/data';
+import { questions as allQuestions } from '@/lib/data';
+import { fetchPapers } from '@/lib/paper-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { getPaperBySlug } from '@/lib/category-service';
+import type { Paper } from '@/types';
 
 // THIS FILE IS DEPRECATED AND WILL BE REPLACED BY /app/papers/[slug]/page.tsx
 // It is kept to avoid breaking changes if the file system cannot be modified.
@@ -18,10 +19,31 @@ export default function SolvedPaperPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.paperId as string;
-  const paper = getPaperBySlug(slug);
+  const [paper, setPaper] = useState<Paper | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(1);
   const questionsPerPage = 2;
+
+  useEffect(() => {
+    const loadPaper = async () => {
+        if (!slug) return;
+        setLoading(true);
+        const papers = await fetchPapers();
+        const foundPaper = papers.find(p => p.slug === slug || p.id === slug);
+        setPaper(foundPaper || null);
+        setLoading(false);
+    }
+    loadPaper();
+  }, [slug])
+
+  if(loading) {
+    return (
+        <div className="container mx-auto text-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+        </div>
+    );
+  }
 
   if (!paper) {
     return (

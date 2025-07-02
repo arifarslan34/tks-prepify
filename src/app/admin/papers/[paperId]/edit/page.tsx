@@ -20,10 +20,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import { fetchCategories, getFlattenedCategories, getPaperById } from "@/lib/category-service";
-import type { Category } from "@/types";
+import { fetchCategories, getFlattenedCategories } from "@/lib/category-service";
+import { getPaperById } from "@/lib/paper-service";
+import type { Category, Paper } from "@/types";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { slugify } from "@/lib/utils";
+import { generatePaperDescription } from "@/ai/flows/generate-paper-description-flow";
+import { generatePaperSeoDetails } from "@/ai/flows/generate-paper-seo-flow";
+import { Switch } from "@/components/ui/switch";
 
 const paperFormSchema = z.object({
   title: z.string().min(3, {
@@ -35,12 +42,18 @@ const paperFormSchema = z.object({
   categoryId: z.string({
     required_error: "Please select a category for this paper.",
   }),
-  questionCount: z.coerce.number().int().positive({
-    message: "Please enter a positive number of questions.",
-  }),
+  slug: z.string().optional(),
+  featured: z.boolean().default(false),
+  questionCount: z.coerce.number().int().min(0, {
+    message: "Number of questions cannot be negative.",
+  }).default(0),
   duration: z.coerce.number().int().positive({
     message: "Please enter a positive duration in minutes.",
   }),
+  year: z.coerce.number().int().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  keywords: z.string().optional(),
 });
 
 type PaperFormValues = z.infer<typeof paperFormSchema>;
@@ -49,46 +62,116 @@ export default function EditPaperPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
+  const paperId = params.paperId as string;
   
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-        setLoading(true);
-        const cats = await fetchCategories();
-        setAllCategories(cats);
-        setLoading(false);
-    };
-    loadData();
-  }, []);
-  
-  const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
-
-  const paperId = params.paperId as string;
-  const paper = getPaperById(paperId);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
 
   const form = useForm<PaperFormValues>({
     resolver: zodResolver(paperFormSchema),
-    defaultValues: {
-        title: "",
-        description: "",
-    }
   });
 
   useEffect(() => {
-      if (paper) {
-          form.reset({
-              title: paper.title,
-              description: paper.description,
-              categoryId: paper.categoryId,
-              questionCount: paper.questionCount,
-              duration: paper.duration,
-          })
-      }
-  }, [paper, form]);
+    if (!paperId) return;
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [cats, paper] = await Promise.all([
+                fetchCategories(),
+                getPaperById(paperId),
+            ]);
+            
+            setAllCategories(cats);
 
-  if (loading || !paper) {
+            if (paper) {
+                form.reset({
+                    ...paper,
+                    year: paper.year || undefined,
+                });
+            } else {
+                toast({ title: "Error", description: "Paper not found.", variant: "destructive" });
+                router.push('/admin/papers');
+            }
+        } catch (error) {
+            console.error("Error loading data:", error);
+            toast({ title: "Error", description: "Failed to load data.", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+    loadData();
+  }, [paperId, form, router, toast]);
+
+  const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
+  
+  async function handleGenerateDescription() {
+    const title = form.getValues("title");
+    if (!title) {
+        toast({ title: "Title required", description: "Please enter a title to generate a description.", variant: "destructive" });
+        return;
+    }
+    setIsGeneratingDesc(true);
+    try {
+        const result = await generatePaperDescription({ title });
+        form.setValue("description", result.description, { shouldValidate: true });
+        toast({ title: "Description Generated", description: "AI has created a description for you." });
+    } catch (error) {
+        console.error("Error generating description:", error);
+        toast({ title: "Generation Failed", description: "Could not generate a description.", variant: "destructive" });
+    } finally {
+        setIsGeneratingDesc(false);
+    }
+  }
+  
+  async function handleGenerateSeo() {
+    const title = form.getValues("title");
+    const description = form.getValues("description");
+    if (!title || !description) {
+        toast({ title: "Title and Description required", description: "Please enter a title and description to generate SEO details.", variant: "destructive" });
+        return;
+    }
+    setIsGeneratingSeo(true);
+    try {
+        const result = await generatePaperSeoDetails({ title, description });
+        form.setValue("keywords", result.keywords, { shouldValidate: true });
+        form.setValue("metaTitle", result.metaTitle, { shouldValidate: true });
+        form.setValue("metaDescription", result.metaDescription, { shouldValidate: true });
+        toast({ title: "SEO Details Generated", description: "AI has filled in the SEO fields for you." });
+    } catch (error) {
+        console.error("Error generating SEO details:", error);
+        toast({ title: "Generation Failed", description: "Could not generate SEO details.", variant: "destructive" });
+    } finally {
+        setIsGeneratingSeo(false);
+    }
+  }
+
+  async function onSubmit(data: PaperFormValues) {
+    setIsSubmitting(true);
+    try {
+      const paperRef = doc(db, "papers", paperId);
+      const paperData = {
+          ...data,
+          slug: slugify(data.slug || data.title),
+      };
+      await updateDoc(paperRef, paperData);
+      toast({
+        title: "Paper Updated",
+        description: "The paper has been updated successfully.",
+      });
+      router.push("/admin/papers");
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating paper: ", error);
+      toast({ title: "Error", description: "Failed to update the paper.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (loading) {
     return (
         <div className="flex justify-center items-center h-full min-h-[calc(100vh-20rem)]">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -96,123 +179,223 @@ export default function EditPaperPage() {
     );
   }
 
-  function onSubmit(data: PaperFormValues) {
-    console.log(data);
-    toast({
-      title: "Paper Updated",
-      description: "The paper details have been saved (console only).",
-    });
-    router.push("/admin/papers");
-  }
+  const currentPaperTitle = form.getValues('title');
 
   return (
     <div className="space-y-6">
        <div>
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Papers
         </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Paper: {paper.title}</CardTitle>
-          <CardDescription>Update the details for this question paper.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Paper Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Physics 101 Final Exam" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="A brief description of what this paper covers..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category for this paper" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {flatCategories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id} style={{ paddingLeft: `${1 + cat.level * 1.5}rem` }} disabled={cat.isParent}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                     <FormDescription>
-                       You can only assign papers to subcategories.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-8">
-                 <FormField
-                    control={form.control}
-                    name="questionCount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Questions</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 50" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="duration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Duration (minutes)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 60" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-              </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Edit Paper: {currentPaperTitle}</CardTitle>
+                    <CardDescription>Update the details for this question paper.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Paper Title</FormLabel>
+                            <FormControl>
+                            <Input {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="slug"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>URL Slug (Optional)</FormLabel>
+                            <FormControl>
+                            <Input {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormDescription>If left blank, the slug will be generated from the title.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between">
+                                <FormLabel>Description</FormLabel>
+                                <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={handleGenerateDescription} disabled={isGeneratingDesc || isSubmitting}>
+                                    {isGeneratingDesc ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
+                                </Button>
+                            </div>
+                            <FormControl>
+                            <Textarea {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="categoryId"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {flatCategories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id} style={{ paddingLeft: `${1 + cat.level * 1.5}rem` }} disabled={cat.isParent}>
+                                    {cat.name}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                             <FormDescription>
+                                You can only assign papers to subcategories that don't have their own children.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="featured"
+                        render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                                <FormLabel className="text-base">Featured Paper</FormLabel>
+                                <FormDescription>Featured papers will be highlighted on the homepage.</FormDescription>
+                            </div>
+                            <FormControl>
+                                <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isSubmitting} />
+                            </FormControl>
+                        </FormItem>
+                        )}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <FormField
+                            control={form.control}
+                            name="questionCount"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Number of Questions</FormLabel>
+                                <FormControl>
+                                <Input type="number" {...field} disabled={isSubmitting} />
+                                </FormControl>
+                                <FormDescription>Note: This is a static count for display. Questions are added separately.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="duration"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Duration (minutes)</FormLabel>
+                                <FormControl>
+                                <Input type="number" {...field} disabled={isSubmitting} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="year"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Year (Optional)</FormLabel>
+                                <FormControl>
+                                <Input type="number" {...field} value={field.value ?? ''} disabled={isSubmitting} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
 
-              <div className="flex justify-end gap-4">
-                 <Button type="button" variant="outline" onClick={() => router.push('/admin/papers')}>
-                    Cancel
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>SEO Details</CardTitle>
+                            <CardDescription>Optimize this paper for search engines.</CardDescription>
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={handleGenerateSeo} disabled={isGeneratingSeo || isSubmitting}>
+                            {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            Generate with AI
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="metaTitle"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Title (Optional)</FormLabel>
+                            <FormControl>
+                            <Input {...field} value={field.value ?? ''} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="metaDescription"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Description (Optional)</FormLabel>
+                            <FormControl>
+                            <Textarea {...field} value={field.value ?? ''} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="keywords"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Keywords (Optional)</FormLabel>
+                            <FormControl>
+                            <Input {...field} value={field.value ?? ''} disabled={isSubmitting} />
+                            </FormControl>
+                             <FormDescription>Comma-separated keywords.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+            <div className="flex justify-end gap-4">
+                <Button type="button" variant="outline" onClick={() => router.push('/admin/papers')} disabled={isSubmitting}>
+                Cancel
                 </Button>
-                <Button type="submit">Save Changes</Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                </Button>
+            </div>
+        </form>
+      </Form>
     </div>
   );
 }

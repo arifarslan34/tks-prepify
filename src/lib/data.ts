@@ -1,6 +1,8 @@
 
 import type { Paper, Question, User } from '@/types';
 
+// This mock data is being phased out. New data will come from Firestore.
+// It is kept here temporarily to support the question management pages, which have not yet been migrated.
 export const papers: Paper[] = [
   { id: 'paper1', title: 'Physics Fundamentals', slug: 'physics-fundamentals', description: 'Test your knowledge on basic physics principles.', categoryId: 'cat1_1', questionCount: 5, duration: 10, year: 2023, featured: true },
   { id: 'paper2', title: 'Algebra I', slug: 'algebra-i', description: 'A test on introductory algebra concepts.', categoryId: 'cat2_1', questionCount: 5, duration: 15, year: 2023 },
@@ -78,4 +80,9 @@ export const users: User[] = [
 
 export function getQuestionById(id:string): Question | undefined {
     return questions.find(q => q.id === id);
+}
+
+// Kept for legacy question management pages that still rely on mock data.
+export function getMockPaperById(id: string): Paper | undefined {
+  return papers.find((paper: Paper) => paper.id === id);
 }

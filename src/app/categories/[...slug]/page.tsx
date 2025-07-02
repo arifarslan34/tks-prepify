@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { papers as allPapers } from '@/lib/data';
+import { fetchPapers } from '@/lib/paper-service';
 import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle } from 'lucide-react';
 import type { Category } from '@/types';
 import { fetchCategories, getCategoryBySlug, getCategoryPath, getDescendantCategoryIds } from '@/lib/category-service';
@@ -30,9 +30,11 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
 
 export default async function CategoryPage({ params }: { params: { slug: string[] } }) {
     const fullSlug = params.slug.join('/');
-
-    // Fetch all categories on the server.
-    const allCategories = await fetchCategories();
+    
+    const [allCategories, allPapers] = await Promise.all([
+        fetchCategories(),
+        fetchPapers()
+    ]);
     
     const category = getCategoryBySlug(fullSlug, allCategories);
     

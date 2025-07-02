@@ -22,8 +22,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { questions as allQuestions } from "@/lib/data";
-import { getPaperById } from "@/lib/category-service";
+import { questions as allQuestions, getMockPaperById } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,7 +33,7 @@ export default function AdminPaperQuestionsPage() {
     const { toast } = useToast();
 
     const paperId = params.paperId as string;
-    const paper = getPaperById(paperId);
+    const paper = getMockPaperById(paperId);
     const questions = allQuestions.filter(q => q.paperId === paperId);
 
     if (!paper) {

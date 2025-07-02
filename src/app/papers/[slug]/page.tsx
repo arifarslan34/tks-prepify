@@ -1,25 +1,56 @@
 
-"use client";
+'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { Metadata } from 'next';
 import { useRouter, useParams } from 'next/navigation';
-import { papers, questions as allQuestions } from '@/lib/data';
+import { questions as allQuestions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { getPaperBySlug } from '@/lib/category-service';
+import { getPaperBySlug } from '@/lib/paper-service';
+import type { Paper } from '@/types';
+
+// NOTE: generateMetadata can't be used in a client component.
+// The metadata will be handled at the page level if needed, or this can be refactored.
+// For now, we focus on the client-side logic.
 
 export default function SolvedPaperPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
   
-  const paper = getPaperBySlug(slug);
-  
+  const [paper, setPaper] = useState<Paper | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [currentPage, setCurrentPage] = useState(1);
   const questionsPerPage = 2;
+
+  useEffect(() => {
+    const loadPaper = async () => {
+        if (!slug) return;
+        setLoading(true);
+        try {
+            const fetchedPaper = await getPaperBySlug(slug);
+            setPaper(fetchedPaper);
+        } catch (error) {
+            console.error("Failed to fetch paper:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    loadPaper();
+  }, [slug]);
+
+  if (loading) {
+    return (
+        <div className="container mx-auto text-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+        </div>
+    );
+  }
 
   if (!paper) {
     return (
