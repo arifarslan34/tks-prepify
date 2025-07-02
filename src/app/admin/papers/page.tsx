@@ -31,17 +31,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search, Loader2 } from "lucide-react";
 import { fetchPapers } from "@/lib/paper-service";
-import { fetchCategories, getCategoryPath, getFlattenedCategories, getCategoryById } from "@/lib/category-service";
+import { fetchCategories, getCategoryPath, getFlattenedCategories } from "@/lib/category-service";
 import type { Category, Paper } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { doc, deleteDoc } from "firebase/firestore";
+import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Switch } from "@/components/ui/switch";
 
 
 export default function AdminPapersPage() {
@@ -52,6 +53,7 @@ export default function AdminPapersPage() {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState<{ [key: string]: boolean }>({});
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [paperToDelete, setPaperToDelete] = useState<Paper | null>(null);
 
@@ -88,6 +90,36 @@ export default function AdminPapersPage() {
     setPaperToDelete(paper);
     setDeleteAlertOpen(true);
   }
+
+  const handleStatusToggle = async (paperId: string, field: 'published' | 'featured', newStatus: boolean) => {
+    setIsUpdating(prev => ({ ...prev, [paperId]: true }));
+    try {
+        const paperRef = doc(db, "papers", paperId);
+        await updateDoc(paperRef, { [field]: newStatus });
+        
+        toast({
+            title: "Paper Updated",
+            description: `The ${field} status has been updated.`,
+        });
+
+        setAllPapers(prevPapers => prevPapers.map(p => 
+            p.id === paperId ? { ...p, [field]: newStatus } : p
+        ));
+        
+        router.refresh();
+
+    } catch (error) {
+        console.error(`Failed to update ${field} status:`, error);
+        toast({
+            title: "Error",
+            description: "Failed to update paper. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsUpdating(prev => ({ ...prev, [paperId]: false }));
+    }
+  };
+
 
   const handleDeletePaper = async () => {
     if (!paperToDelete) return;
@@ -167,40 +199,55 @@ export default function AdminPapersPage() {
           ) : (
             <Table>
                 <TableHeader>
-                <TableRow>
-                    <TableHead className="w-[30%]" >Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Questions</TableHead>
-                    <TableHead className="text-center">Duration</TableHead>
-                    <TableHead>
-                    <span className="sr-only">Actions</span>
-                    </TableHead>
-                </TableRow>
+                  <TableRow>
+                      <TableHead className="w-[35%]">Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead className="text-center">Published</TableHead>
+                      <TableHead className="text-center">Featured</TableHead>
+                      <TableHead>
+                          <span className="sr-only">Actions</span>
+                      </TableHead>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
-                {papers.map((paper) => {
+                {papers.length > 0 ? papers.map((paper) => {
                     const categoryPath = getCategoryPath(paper.categoryId, allCategories);
                     const categoryName = categoryPath?.map(c => c.name).join(' / ') || 'N/A';
+                    const isPaperUpdating = isUpdating[paper.id] || isDeleting;
                     return (
                     <TableRow key={paper.id}>
-                        <TableCell className="font-medium">{paper.title}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{paper.title}</div>
+                          <div className="text-sm text-muted-foreground font-mono">{paper.slug}</div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{categoryName}</Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">{paper.slug}</TableCell>
-                        <TableCell>
-                          <Badge variant={paper.published ? 'default' : 'secondary'}>
-                              {paper.published ? 'Published' : 'Draft'}
-                          </Badge>
+                         <TableCell className="text-muted-foreground text-sm">
+                            <div>{paper.questionCount} questions</div>
+                            <div>{paper.duration} min</div>
                         </TableCell>
-                        <TableCell className="text-center">{paper.questionCount}</TableCell>
-                        <TableCell className="text-center">{paper.duration}</TableCell>
+                        <TableCell className="text-center">
+                            <Switch
+                                checked={paper.published}
+                                onCheckedChange={(status) => handleStatusToggle(paper.id, 'published', status)}
+                                disabled={isPaperUpdating}
+                                aria-label="Toggle published status"
+                            />
+                        </TableCell>
+                        <TableCell className="text-center">
+                            <Switch
+                                checked={paper.featured}
+                                onCheckedChange={(status) => handleStatusToggle(paper.id, 'featured', status)}
+                                disabled={isPaperUpdating}
+                                aria-label="Toggle featured status"
+                            />
+                        </TableCell>
                         <TableCell className="text-right">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isPaperUpdating}>
                                 <MoreHorizontal className="h-4 w-4" />
                                 <span className="sr-only">Toggle menu</span>
                             </Button>
@@ -223,6 +270,7 @@ export default function AdminPapersPage() {
                             <DropdownMenuItem 
                                 className="text-destructive"
                                 onSelect={() => openDeleteDialog(paper)}
+                                disabled={isPaperUpdating}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
@@ -232,7 +280,13 @@ export default function AdminPapersPage() {
                         </TableCell>
                     </TableRow>
                     )
-                })}
+                }) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        No papers found. Try adjusting your filters.
+                      </TableCell>
+                    </TableRow>
+                )}
                 </TableBody>
             </Table>
           )}
@@ -260,3 +314,5 @@ export default function AdminPapersPage() {
     </>
   )
 }
+
+    
