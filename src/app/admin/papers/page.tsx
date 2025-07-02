@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react";
@@ -25,11 +26,13 @@ import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search } from "lucide-r
 import { papers as allPapers, getCategoryPath, getFlattenedCategories } from "@/lib/data";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function AdminPapersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const { toast } = useToast();
 
   const flatCategories = getFlattenedCategories();
 
@@ -119,16 +122,26 @@ export default function AdminPapersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                           <DropdownMenuItem disabled>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add/Edit Questions
-                          </DropdownMenuItem>
-                          <DropdownMenuItem disabled>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Details
+                           <DropdownMenuItem asChild>
+                             <Link href={`/admin/papers/${paper.id}/questions`}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add/Edit Questions
+                              </Link>
+                            </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/papers/${paper.id}/edit`}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Details
+                            </Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive" disabled>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => toast({
+                                title: "Paper Deleted (simulation)",
+                                description: `The paper "${paper.title}" will be deleted.`,
+                            })}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>

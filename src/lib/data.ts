@@ -1,3 +1,4 @@
+
 import type { Category, Paper, Question, User } from '@/types';
 import { Atom, Calculator, Briefcase, Languages } from 'lucide-react';
 
@@ -17,6 +18,17 @@ function findCategory(categories: Category[], id: string): Category | undefined 
 export function getCategoryById(id: string): Category | undefined {
   return findCategory(categories, id);
 }
+
+// Helper to get a paper by ID
+export function getPaperById(id: string): Paper | undefined {
+  return papers.find(paper => paper.id === id);
+}
+
+// Helper to get a question by ID
+export function getQuestionById(id:string): Question | undefined {
+    return questions.find(q => q.id === id);
+}
+
 
 // Helper to get all descendant category IDs including the parent
 export function getDescendantCategoryIds(startId: string): string[] {
