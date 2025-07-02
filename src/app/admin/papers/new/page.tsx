@@ -94,7 +94,15 @@ export default function NewPaperPage() {
   async function handleGenerateDescription() {
     const title = form.getValues("title");
     const categoryId = form.getValues("categoryId");
-    const year = form.getValues("year");
+    const rawYear = form.getValues("year");
+
+    let year: number | undefined = undefined;
+    if (rawYear && String(rawYear).trim()) {
+        const parsed = parseInt(String(rawYear), 10);
+        if (!isNaN(parsed)) {
+            year = parsed;
+        }
+    }
 
     if (!title || !categoryId) {
         toast({ title: "Title & Category Required", description: "Please enter a title and select a category to generate a description.", variant: "destructive" });
@@ -120,7 +128,15 @@ export default function NewPaperPage() {
     const title = form.getValues("title");
     const description = form.getValues("description");
     const categoryId = form.getValues("categoryId");
-    const year = form.getValues("year");
+    const rawYear = form.getValues("year");
+
+    let year: number | undefined = undefined;
+    if (rawYear && String(rawYear).trim()) {
+        const parsed = parseInt(String(rawYear), 10);
+        if (!isNaN(parsed)) {
+            year = parsed;
+        }
+    }
 
     if (!title || !description || !categoryId) {
         toast({ title: "Title, Description & Category Required", description: "Please provide all details to generate SEO content.", variant: "destructive" });
