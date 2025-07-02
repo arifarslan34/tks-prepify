@@ -1,41 +1,19 @@
 
-"use client";
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { papers as allPapers } from '@/lib/data';
-import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle, Loader2 } from 'lucide-react';
+import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle } from 'lucide-react';
 import type { Category } from '@/types';
 import { fetchCategories, getCategoryBySlug, getCategoryPath, getDescendantCategoryIds } from '@/lib/category-service';
 
-export default function CategoryPage() {
-    const params = useParams();
-    const slug = params.slug as string;
+export default async function CategoryPage({ params }: { params: { slug: string } }) {
+    const slug = params.slug;
 
-    const [allCategories, setAllCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            const cats = await fetchCategories();
-            setAllCategories(cats);
-            setLoading(false);
-        };
-        loadData();
-    }, []);
-
-    if (loading) {
-        return (
-          <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-8 md:py-12 text-center flex justify-center items-center min-h-[50vh]">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        );
-    }
+    // Fetch all categories on the server.
+    const allCategories = await fetchCategories();
     
     const category = getCategoryBySlug(slug, allCategories);
     
