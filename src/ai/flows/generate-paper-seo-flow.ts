@@ -34,7 +34,7 @@ const prompt = ai.definePrompt({
   name: 'generatePaperSeoDetailsPrompt',
   input: {schema: GeneratePaperSeoDetailsInputSchema},
   output: {schema: GeneratePaperSeoDetailsOutputSchema},
-  prompt: `You are an SEO expert. Given the following past paper title, description, its category, and year (if provided), generate optimized SEO content.
+  prompt: `You are an SEO expert. Given the following past paper title, description, its category, and year (if provided), generate optimized SEO content. Use simple and easy-to-understand language for all generated content.
 
 Paper Title: {{{title}}}
 Paper Description: {{{description}}}

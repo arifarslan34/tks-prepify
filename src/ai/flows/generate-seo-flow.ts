@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for generating SEO-related content for categories.
@@ -31,7 +32,7 @@ const prompt = ai.definePrompt({
   name: 'generateSeoDetailsPrompt',
   input: {schema: GenerateSeoDetailsInputSchema},
   output: {schema: GenerateSeoDetailsOutputSchema},
-  prompt: `You are an SEO expert. Given the following category name and description, generate optimized SEO content.
+  prompt: `You are an SEO expert. Given the following category name and description, generate optimized SEO content. Use simple and easy-to-understand language for all generated content.
 
 Category Name: {{{name}}}
 Category Description: {{{description}}}

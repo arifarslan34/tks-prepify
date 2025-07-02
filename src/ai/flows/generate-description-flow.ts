@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for generating category descriptions.
@@ -28,7 +29,7 @@ const prompt = ai.definePrompt({
   name: 'generateDescriptionPrompt',
   input: {schema: GenerateDescriptionInputSchema},
   output: {schema: GenerateDescriptionOutputSchema},
-  prompt: `You are an expert content writer. Given the following category name, generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers practice question papers.
+  prompt: `You are an expert content writer. Given the following category name, generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers practice question papers. Use simple and easy-to-understand language.
 
 Category Name: {{{name}}}`,
 });

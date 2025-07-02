@@ -31,7 +31,7 @@ const prompt = ai.definePrompt({
   name: 'generatePaperDescriptionPrompt',
   input: {schema: GeneratePaperDescriptionInputSchema},
   output: {schema: GeneratePaperDescriptionOutputSchema},
-  prompt: `You are an expert content writer. Given the following past paper title, its category, and year (if provided), generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers past question papers for study.
+  prompt: `You are an expert content writer. Given the following past paper title, its category, and year (if provided), generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers past question papers for study. Use simple and easy-to-understand language.
 
 Paper Title: {{{title}}}
 Category: {{{categoryName}}}
