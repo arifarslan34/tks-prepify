@@ -40,13 +40,35 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 
 type FlatCategory = ReturnType<typeof getFlattenedCategories>[0] & { raw: Category };
+
+function filterTree(categories: Category[], term: string): Category[] {
+  const lowercasedTerm = term.toLowerCase();
+
+  return categories.map(category => {
+    // If the category has subcategories, filter them recursively
+    const filteredSubcategories = category.subcategories 
+      ? filterTree(category.subcategories, term) 
+      : [];
+
+    const nameMatches = category.name.toLowerCase().includes(lowercasedTerm);
+    
+    // Include the category if its name matches or if it has any matching subcategories
+    if (nameMatches || filteredSubcategories.length > 0) {
+      return { ...category, subcategories: filteredSubcategories };
+    }
+    
+    return null;
+  }).filter((category): category is Category => category !== null);
+}
 
 export default function AdminCategoriesPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState<{ [key: string]: boolean }>({});
@@ -64,13 +86,24 @@ export default function AdminCategoriesPage() {
     loadCategories();
   }, [loadCategories]);
 
+  const filteredTree = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return allCategories;
+    }
+    return filterTree(allCategories, searchTerm);
+  }, [allCategories, searchTerm]);
+
   const flatCategories: FlatCategory[] = useMemo(() => {
-    const flattened = getFlattenedCategories(allCategories);
-    return flattened.map(flatCat => ({
-        ...flatCat,
-        raw: getCategoryById(flatCat.id, allCategories)!
-    }));
-  }, [allCategories]);
+    const flattened = getFlattenedCategories(filteredTree);
+    return flattened.map(flatCat => {
+        // We get the raw category from `allCategories` to ensure we have the full, unfiltered subcategory data for counts.
+        const rawCategory = getCategoryById(flatCat.id, allCategories);
+        return {
+            ...flatCat,
+            raw: rawCategory!
+        };
+    });
+  }, [filteredTree, allCategories]);
 
   const getPaperCount = (categoryId: string) => {
     const descendantIds = getDescendantCategoryIds(categoryId, allCategories);
@@ -199,13 +232,23 @@ export default function AdminCategoriesPage() {
         <Card>
           <CardHeader>
             <CardTitle>Categories</CardTitle>
-            <CardDescription>A list of all categories and subcategories.</CardDescription>
+            <CardDescription>A list of all categories and subcategories. Use the filter to search.</CardDescription>
+             <div className="pt-4">
+              <Input 
+                placeholder="Filter by name..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50%]">Name</TableHead>
+                  <TableHead className="w-[40%]">Name</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Subcategories</TableHead>
                   <TableHead>Papers</TableHead>
                   <TableHead>Featured</TableHead>
                   <TableHead>
@@ -214,13 +257,19 @@ export default function AdminCategoriesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {flatCategories.map((category) => (
+                {flatCategories.length > 0 ? flatCategories.map((category) => (
                   <TableRow key={category.id}>
                     <TableCell 
                       className="font-medium"
                       style={{ paddingLeft: `${1 + category.level * 2}rem` }}
                     >
                       {category.name}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-xs">
+                        {category.raw.slug}
+                    </TableCell>
+                    <TableCell>
+                      {category.raw.subcategories?.length || 0}
                     </TableCell>
                     <TableCell>
                       {getPaperCount(category.id)}
@@ -267,7 +316,13 @@ export default function AdminCategoriesPage() {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                   <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        No categories found.
+                      </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
