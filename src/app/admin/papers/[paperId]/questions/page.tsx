@@ -95,9 +95,11 @@ export default function AdminPaperQuestionsPage() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem disabled>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
+                                    <DropdownMenuItem asChild>
+                                        <Link href={`/admin/papers/${paperId}/questions/${question.id}/edit`}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Edit
+                                        </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 

@@ -1,18 +1,20 @@
+
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Users, Folder, PlusCircle, ArrowUpRight } from 'lucide-react';
-import { papers, categories, getFlattenedCategories, getCategoryById } from '@/lib/data';
+import { FileText, Users, Folder, PlusCircle, ArrowUpRight, HelpCircle } from 'lucide-react';
+import { papers, categories, getFlattenedCategories, getCategoryById, questions as allQuestions, users } from '@/lib/data';
 import Link from 'next/link';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 
 export default function AdminDashboardPage() {
   const totalPapers = papers.length;
   const totalCategories = getFlattenedCategories().length;
-  const totalUsers = 1; // Placeholder for user count
+  const totalQuestions = allQuestions.length;
+  const totalUsers = users.length;
 
   const papersPerCategory = categories.map(category => ({
     name: category.name,
@@ -43,7 +45,7 @@ export default function AdminDashboardPage() {
             </Button>
         </div>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Papers</CardTitle>
@@ -66,12 +68,22 @@ export default function AdminDashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Questions</CardTitle>
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalQuestions}</div>
+            <p className="text-xs text-muted-foreground">+20 since last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{totalUsers}</div>
-            <p className="text-xs text-muted-foreground">Currently in development</p>
+            <p className="text-xs text-muted-foreground">+1 since last month</p>
           </CardContent>
         </Card>
       </div>
