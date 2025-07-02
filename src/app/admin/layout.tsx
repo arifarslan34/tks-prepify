@@ -1,3 +1,4 @@
+
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarTrigger, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
 import { LayoutDashboard, FileText, Folder, Home, Users, Settings, Bell, Search } from 'lucide-react';
 import Link from 'next/link';
@@ -14,7 +15,7 @@ export default function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="sidebar">
           <SidebarHeader>
             <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
               <BookOpen className="h-6 w-6 text-primary" />
@@ -79,7 +80,7 @@ export default function AdminLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="flex items-center justify-between px-6 md:px-10 h-16 border-b sticky top-0 bg-background z-10">
+          <header className="flex items-center justify-between px-8 md:px-16 h-16 border-b sticky top-0 bg-background z-10">
             <div className="flex items-center gap-4">
                 <div className="md:hidden">
                     <SidebarTrigger />
@@ -118,7 +119,7 @@ export default function AdminLayout({
               </DropdownMenu>
             </div>
           </header>
-          <div className="p-8 md:p-12 bg-muted/40 min-h-[calc(100vh-4rem)]">
+          <div className="p-8 md:p-16 bg-muted/40 min-h-[calc(100vh-4rem)]">
             {children}
           </div>
         </SidebarInset>

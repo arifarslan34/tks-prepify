@@ -13,7 +13,7 @@ export default function Home() {
         <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold font-headline leading-tight">
-              Ace Your Tests with <span className="text-primary">Expertly Solved</span> Question Papers
+              Excel in Your Tests with <span className="text-primary">Expertly Solved</span> Question Papers
             </h1>
             <p className="text-lg text-muted-foreground">
               Prepify offers a vast library of solved question papers, complete with detailed explanations and practice tools to help you ace your exams.
