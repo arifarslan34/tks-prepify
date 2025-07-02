@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -100,7 +101,7 @@ export default async function Home() {
         <div className="text-center mt-12">
           <Button asChild size="lg" variant="outline">
               <Link href="/categories">
-                  Browse All Featured Categories
+                  Browse All Categories
                   <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
           </Button>

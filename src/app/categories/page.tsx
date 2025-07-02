@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { papers } from '@/lib/data';
@@ -6,20 +7,18 @@ import { ArrowRight, Folder, FileText } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 
 export default async function CategoriesPage() {
-  const allCategories = await fetchCategories();
-  // Filter to show only top-level featured categories
-  const featuredCategories = allCategories.filter(c => c.featured);
+  const allTopLevelCategories = await fetchCategories();
 
   return (
     <div className="container mx-auto px-16 py-16 md:py-24">
       <div className="text-center mb-12">
-        <h1 className="text-3xl md:text-4xl font-bold font-headline">Browse Featured Categories</h1>
+        <h1 className="text-3xl md:text-4xl font-bold font-headline">Browse All Categories</h1>
         <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {featuredCategories.length > 0 ? (
-          featuredCategories.map((category) => {
-            const paperCount = papers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId)).length;
+        {allTopLevelCategories.length > 0 ? (
+          allTopLevelCategories.map((category) => {
+            const paperCount = papers.filter(p => getDescendantCategoryIds(category.id, allTopLevelCategories).includes(p.categoryId)).length;
             const subCategoryCount = category.subcategories?.length || 0;
 
             return (
@@ -57,7 +56,7 @@ export default async function CategoriesPage() {
           })
         ) : (
            <div className="col-span-full text-center text-muted-foreground py-8">
-              <p>No featured categories available at the moment. Check back soon!</p>
+              <p>No categories available at the moment. Check back soon!</p>
             </div>
         )}
       </div>
