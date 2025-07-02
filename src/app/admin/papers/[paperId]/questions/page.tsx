@@ -84,7 +84,7 @@ export default function AdminPaperQuestionsPage() {
                             <TableCell>
                                 <Badge variant="secondary">{question.type.toUpperCase()}</Badge>
                             </TableCell>
-                            <TableCell className="truncate max-w-xs">{question.correctAnswer}</TableCell>
+                            <TableCell className="truncate max-w-xs">{Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

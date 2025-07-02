@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -67,24 +68,30 @@ export default function SolvedPaperPage({ params }: Props) {
                   
                   {question.type === 'mcq' && question.options && (
                     <div className="space-y-2 mb-4">
-                      {question.options.map((option, optIndex) => (
-                        <div
-                          key={optIndex}
-                          className={cn(
-                            'flex items-center gap-3 p-3 rounded-md border',
-                            option === question.correctAnswer
-                              ? 'bg-chart-2/20 border-chart-2'
-                              : 'bg-card'
-                          )}
-                        >
-                          {option === question.correctAnswer ? (
-                            <CheckCircle2 className="h-5 w-5 text-chart-2 flex-shrink-0" />
-                          ) : (
-                            <div className="h-5 w-5 flex-shrink-0" />
-                          )}
-                          <span className="text-base">{option}</span>
-                        </div>
-                      ))}
+                      {question.options.map((option, optIndex) => {
+                        const isCorrect = Array.isArray(question.correctAnswer)
+                          ? question.correctAnswer.includes(option)
+                          : option === question.correctAnswer;
+                        
+                        return (
+                          <div
+                            key={optIndex}
+                            className={cn(
+                              'flex items-center gap-3 p-3 rounded-md border',
+                              isCorrect
+                                ? 'bg-chart-2/20 border-chart-2'
+                                : 'bg-card'
+                            )}
+                          >
+                            {isCorrect ? (
+                              <CheckCircle2 className="h-5 w-5 text-chart-2 flex-shrink-0" />
+                            ) : (
+                              <div className="h-5 w-5 flex-shrink-0" />
+                            )}
+                            <span className="text-base">{option}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -95,13 +102,15 @@ export default function SolvedPaperPage({ params }: Props) {
                     </div>
                   )}
                   
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-secondary/50">
-                     <Lightbulb className="h-5 w-5 text-accent-foreground flex-shrink-0 mt-1" />
-                     <div>
-                        <p className="font-semibold">Explanation</p>
-                        <p className="text-muted-foreground">{question.explanation}</p>
-                     </div>
-                  </div>
+                  {question.explanation && (
+                    <div className="flex items-start gap-3 p-3 rounded-md bg-secondary/50">
+                       <Lightbulb className="h-5 w-5 text-accent-foreground flex-shrink-0 mt-1" />
+                       <div>
+                          <p className="font-semibold">Explanation</p>
+                          <p className="text-muted-foreground">{question.explanation}</p>
+                       </div>
+                    </div>
+                  )}
                 </div>
               </div>
               {index < currentQuestions.length - 1 && <Separator className="mt-8" />}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
@@ -38,11 +39,15 @@ export default function ResultsPage() {
       if (paper && questions.length > 0) {
         let score = 0;
         const processedAnswers: UserAnswer[] = questions.map((q, index) => {
-          const isCorrect = q.correctAnswer === userAnswersArray[index];
+          const userAnswer = userAnswersArray[index];
+          const isCorrect = Array.isArray(q.correctAnswer) 
+            ? q.correctAnswer.includes(userAnswer)
+            : q.correctAnswer === userAnswer;
+            
           if (isCorrect) score++;
           return {
             questionId: q.id,
-            selectedOption: userAnswersArray[index],
+            selectedOption: userAnswer,
             isCorrect,
             timeSpent: 0, // Simplified for this example
           };
@@ -69,12 +74,13 @@ export default function ResultsPage() {
     const path = getCategoryPath(result.paper.categoryId);
     const categoryName = path?.[0]?.name || 'General';
     const subCategoryName = path && path.length > 0 ? path[path.length - 1].name : 'General';
+    const correctAnswerText = Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer;
     
     try {
       const aiFeedback = await getPersonalizedFeedback({
         question: question.questionText,
         userAnswer: userAnswer || "No answer provided.",
-        correctAnswer: question.correctAnswer,
+        correctAnswer: correctAnswerText,
         category: categoryName,
         subcategory: subCategoryName,
       });
@@ -165,6 +171,7 @@ export default function ResultsPage() {
                     const question = allQuestions.find(q => q.id === answer.questionId);
                     if (!question) return null;
                     const questionFeedback = feedback[question.id];
+                    const correctAnswerText = Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer;
 
                     return (
                       <AccordionItem key={question.id} value={`item-${index}`}>
@@ -176,8 +183,8 @@ export default function ResultsPage() {
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4">
                           <p>Your answer: <Badge variant={answer.isCorrect ? "default" : "destructive"}>{answer.selectedOption || "Not Answered"}</Badge></p>
-                          {!answer.isCorrect && <p>Correct answer: <Badge className="bg-green-600 hover:bg-green-700">{question.correctAnswer}</Badge></p>}
-                          <p className="text-muted-foreground"><span className="font-semibold">Explanation:</span> {question.explanation}</p>
+                          {!answer.isCorrect && <p>Correct answer: <Badge className="bg-green-600 hover:bg-green-700">{correctAnswerText}</Badge></p>}
+                          {question.explanation && <p className="text-muted-foreground"><span className="font-semibold">Explanation:</span> {question.explanation}</p>}
                           {!answer.isCorrect && (
                             <div className="p-4 bg-secondary/50 rounded-lg">
                               <Button size="sm" onClick={() => handleGetFeedback(question, answer.selectedOption)} disabled={questionFeedback?.loading}>

@@ -23,32 +23,35 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { getPaperById, getQuestionById } from "@/lib/data";
 import { useEffect } from "react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
-const questionFormSchema = z.object({
-  questionText: z.string().min(10, { message: "Question text must be at least 10 characters." }),
-  type: z.enum(['mcq', 'short_answer']),
-  options: z.array(z.object({ text: z.string().min(1, { message: "Option text cannot be empty." }) })).optional(),
-  correctAnswer: z.string().min(1, { message: "A correct answer must be provided." }),
-  explanation: z.string().optional(),
-}).refine(data => {
-    if (data.type === 'mcq') {
-        return data.options && data.options.length >= 2;
-    }
-    return true;
-}, {
-    message: "MCQ questions must have at least 2 options.",
-    path: ["options"],
-}).refine(data => {
-    if (data.type === 'mcq' && data.options && data.correctAnswer) {
-        return data.options.some(opt => opt.text === data.correctAnswer);
-    }
-    return true;
-}, {
-    message: "The correct answer must be one of the provided options.",
-    path: ["correctAnswer"],
+const mcqSchema = z.object({
+    type: z.literal('mcq'),
+    questionText: z.string().min(10, { message: "Question text must be at least 10 characters." }),
+    options: z.array(z.object({ text: z.string().min(1, { message: "Option text cannot be empty." }) })).min(2, "MCQ questions must have at least 2 options."),
+    correctAnswers: z.array(z.string()).min(1, { message: "At least one correct answer must be selected." }),
+    explanation: z.string().optional(),
 });
+
+const shortAnswerSchema = z.object({
+    type: z.literal('short_answer'),
+    questionText: z.string().min(10, { message: "Question text must be at least 10 characters." }),
+    correctAnswer: z.string().min(1, { message: "A correct answer must be provided." }),
+    explanation: z.string().optional(),
+});
+
+const questionFormSchema = z.discriminatedUnion("type", [mcqSchema, shortAnswerSchema])
+  .refine(data => {
+    if (data.type === 'mcq') {
+        const optionTexts = data.options.map(opt => opt.text);
+        return data.correctAnswers.every(answer => optionTexts.includes(answer));
+    }
+    return true;
+  }, {
+      message: "Correct answers must match one of the options.",
+      path: ["correctAnswers"],
+  });
+
 
 type QuestionFormValues = z.infer<typeof questionFormSchema>;
 
@@ -65,28 +68,32 @@ export default function EditQuestionPage() {
 
   const form = useForm<QuestionFormValues>({
     resolver: zodResolver(questionFormSchema),
-    defaultValues: {
-      questionText: '',
-      options: [],
-      correctAnswer: '',
-      explanation: '',
-    },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
+    // @ts-ignore
     name: "options"
   });
 
   useEffect(() => {
     if (question) {
-        form.reset({
-            type: question.type,
-            questionText: question.questionText,
-            options: question.options?.map(opt => ({ text: opt })) || [],
-            correctAnswer: question.correctAnswer,
-            explanation: question.explanation || '',
-        })
+        if (question.type === 'mcq') {
+            form.reset({
+                type: 'mcq',
+                questionText: question.questionText,
+                options: question.options?.map(opt => ({ text: opt })) || [],
+                correctAnswers: Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer],
+                explanation: question.explanation || '',
+            })
+        } else {
+            form.reset({
+                type: 'short_answer',
+                questionText: question.questionText,
+                correctAnswer: question.correctAnswer as string,
+                explanation: question.explanation || '',
+            })
+        }
     }
   }, [question, form]);
 
@@ -130,6 +137,7 @@ export default function EditQuestionPage() {
                   <FormItem>
                     <FormLabel>Question Type</FormLabel>
                     <Select onValueChange={(value) => {
+                      // @ts-ignore
                       field.onChange(value);
                       if (value === 'mcq' && fields.length === 0) {
                         append({ text: '' });
@@ -167,73 +175,83 @@ export default function EditQuestionPage() {
               
               {questionType === 'mcq' && (
                 <div className="space-y-4 rounded-md border p-4">
-                  <FormField
-                    control={form.control}
-                    name="correctAnswer"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Options & Correct Answer</FormLabel>
-                        <FormDescription>
-                          Add your options below. Select the radio button for the correct answer.
-                        </FormDescription>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="space-y-2"
-                          >
-                            {fields.map((item, index) => (
-                              <FormField
-                                key={item.id}
-                                control={form.control}
-                                name={`options.${index}.text`}
-                                render={({ field: optionField }) => (
-                                  <div className="flex items-center gap-3">
-                                    <RadioGroupItem value={optionField.value} id={item.id} />
-                                    <Label htmlFor={item.id} className="flex-grow font-normal">
-                                      <Input
-                                        {...optionField}
-                                        placeholder={`Option ${index + 1}`}
-                                        onChange={(e) => {
-                                          const oldValue = optionField.value;
-                                          optionField.onChange(e);
-                                          if (form.getValues("correctAnswer") === oldValue) {
-                                            form.setValue("correctAnswer", e.target.value, { shouldValidate: true });
-                                          }
-                                        }}
-                                      />
-                                    </Label>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => remove(index)}
-                                      disabled={fields.length <= 2}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span className="sr-only">Remove option</span>
-                                    </Button>
-                                  </div>
-                                )}
-                              />
-                            ))}
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormLabel>Options & Correct Answers</FormLabel>
+                  <FormDescription>
+                    Add your options below and check the box for each correct answer.
+                  </FormDescription>
+                   <div className="space-y-3">
+                    {fields.map((item, index) => (
+                      <div key={item.id} className="flex items-center gap-4">
+                        <FormField
+                            control={form.control}
+                            // @ts-ignore
+                            name="correctAnswers"
+                            render={({ field }) => (
+                                <Checkbox
+                                    // @ts-ignore
+                                    checked={field.value?.includes(form.getValues(`options.${index}.text`))}
+                                    onCheckedChange={(checked) => {
+                                        // @ts-ignore
+                                        const optionText = form.getValues(`options.${index}.text`);
+                                        if (!optionText) return;
+                                        const currentAnswers = field.value || [];
+                                        if (checked) {
+                                            field.onChange([...currentAnswers, optionText]);
+                                        } else {
+                                            field.onChange(currentAnswers.filter((val: string) => val !== optionText));
+                                        }
+                                    }}
+                                />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            // @ts-ignore
+                            name={`options.${index}.text`}
+                            render={({ field }) => (
+                                <Input
+                                    {...field}
+                                    placeholder={`Option ${index + 1}`}
+                                    onChange={(e) => {
+                                        const oldValue = field.value;
+                                        const newValue = e.target.value;
+                                        field.onChange(newValue);
+                                        // @ts-ignore
+                                        const correctAnswers = form.getValues("correctAnswers") || [];
+                                        if (correctAnswers.includes(oldValue)) {
+                                            // @ts-ignore
+                                            form.setValue("correctAnswers", correctAnswers.map((ans: string) => ans === oldValue ? newValue : ans), { shouldValidate: true });
+                                        }
+                                    }}
+                                />
+                            )}
+                        />
+                         <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => remove(index)}
+                            disabled={fields.length <= 2}
+                            >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Remove option</span>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ text: "" })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Option
                   </Button>
+                  {/* @ts-ignore */}
+                  <FormMessage>{form.formState.errors.correctAnswers?.message || form.formState.errors.options?.message}</FormMessage>
                 </div>
               )}
-
 
               {questionType === 'short_answer' && (
                 <FormField
                   control={form.control}
+                  // @ts-ignore
                   name="correctAnswer"
                   render={({ field }) => (
                     <FormItem>

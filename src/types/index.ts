@@ -21,8 +21,8 @@ export interface Question {
   questionText: string;
   type: 'mcq' | 'short_answer';
   options?: string[]; // Only for MCQ
-  correctAnswer: string;
-  explanation: string;
+  correctAnswer: string | string[];
+  explanation?: string;
 }
 
 export interface UserAnswer {
