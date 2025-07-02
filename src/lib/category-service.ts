@@ -22,6 +22,7 @@ const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = 
 type FirestoreCategory = Omit<Category, 'icon' | 'subcategories'> & {
     icon?: string;
     parentId?: string | null;
+    featured?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ export async function fetchCategories(): Promise<Category[]> {
       description: data.description,
       icon: data.icon ? iconMap[data.icon] : undefined,
       parentId: data.parentId || null,
+      featured: data.featured || false,
     };
   });
 
@@ -55,6 +57,21 @@ export async function fetchCategories(): Promise<Category[]> {
       tree.push(mappedCategory);
     }
   }
+
+  // Sort top-level categories, featured first
+  tree.sort((a, b) => {
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return a.name.localeCompare(b.name);
+  });
+  
+  // Sort sub-categories by name
+  categoryMap.forEach(cat => {
+    if(cat.subcategories) {
+      cat.subcategories.sort((a,b) => a.name.localeCompare(b.name));
+    }
+  });
+
 
   return tree;
 }

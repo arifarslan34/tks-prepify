@@ -26,6 +26,7 @@ import { fetchCategories, getFlattenedCategories, clearCategoriesCache } from "@
 import type { Category } from "@/types";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Switch } from "@/components/ui/switch";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -35,6 +36,7 @@ const categoryFormSchema = z.object({
     message: "Description must be at least 10 characters.",
   }),
   parentId: z.string().optional(),
+  featured: z.boolean().default(false).optional(),
 });
 
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
@@ -71,16 +73,18 @@ function NewCategoryPageComponent() {
       name: "",
       description: "",
       parentId: parentId === "none" ? undefined : parentId,
+      featured: false,
     },
   });
 
   async function onSubmit(data: CategoryFormValues) {
     setIsSubmitting(true);
     try {
-      const categoryData: { name: string; description: string; parentId?: string | null } = {
+      const categoryData: { name: string; description: string; parentId?: string | null; featured?: boolean; } = {
         name: data.name,
         description: data.description,
         parentId: data.parentId === 'none' || !data.parentId ? null : data.parentId,
+        featured: data.featured || false,
       };
 
       await addDoc(collection(db, "categories"), categoryData);
@@ -153,6 +157,29 @@ function NewCategoryPageComponent() {
                       <Textarea placeholder="A brief description of the category..." {...field} disabled={isSubmitting}/>
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="featured"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Featured Category
+                      </FormLabel>
+                      <FormDescription>
+                        Featured categories will be displayed on the homepage.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />

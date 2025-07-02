@@ -10,6 +10,7 @@ import { getCategoryById } from '@/lib/category-service';
 
 export default async function Home() {
   const allCategories = await fetchCategories();
+  const featuredCategories = allCategories.filter(c => c.featured).slice(0, 4);
 
   return (
     <>
@@ -52,7 +53,8 @@ export default async function Home() {
           <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {allCategories.slice(0, 4).map((category) => {
+          {featuredCategories.length > 0 ? (
+            featuredCategories.map((category) => {
               const paperCount = papers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId)).length;
               const subCategoryCount = category.subcategories?.length || 0;
 
@@ -88,7 +90,12 @@ export default async function Home() {
                   </Card>
                 </Link>
               )
-            })}
+            })
+          ) : (
+            <div className="col-span-full text-center text-muted-foreground py-8">
+              <p>No featured categories available at the moment. Check back soon!</p>
+            </div>
+          )}
         </div>
         <div className="text-center mt-12">
           <Button asChild size="lg" variant="outline">
