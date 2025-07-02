@@ -24,6 +24,7 @@ import { ArrowLeft, Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { getPaperById, getQuestionById } from "@/lib/data";
 import { useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const questionFormSchema = z.object({
   questionText: z.string().min(10, { message: "Question text must be at least 10 characters." }),
@@ -171,36 +172,51 @@ export default function EditQuestionPage() {
                     name="correctAnswer"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
-                        <FormLabel>Options</FormLabel>
-                        <FormDescription>Add at least 2 options and select one as the correct answer.</FormDescription>
+                        <FormLabel>Options & Correct Answer</FormLabel>
+                        <FormDescription>
+                          Add your options below. Select the radio button for the correct answer.
+                        </FormDescription>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
                             value={field.value}
                             className="space-y-2"
                           >
-                            {fields.map((item, index) => {
-                               const optionValue = form.watch(`options.${index}.text`);
-                               return (
-                                <FormField
-                                  key={item.id}
-                                  control={form.control}
-                                  name={`options.${index}.text`}
-                                  render={({ field: optionField }) => (
-                                    <FormItem className="flex items-center gap-2">
-                                      <FormControl>
-                                        <RadioGroupItem value={optionValue} id={`${item.id}-radio`} />
-                                      </FormControl>
-                                      <Input {...optionField} placeholder={`Option ${index + 1}`} className="flex-grow" />
-                                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 2}>
-                                          <Trash2 className="h-4 w-4" />
-                                          <span className="sr-only">Remove option</span>
-                                      </Button>
-                                    </FormItem>
-                                  )}
-                                />
-                              )
-                            })}
+                            {fields.map((item, index) => (
+                              <FormField
+                                key={item.id}
+                                control={form.control}
+                                name={`options.${index}.text`}
+                                render={({ field: optionField }) => (
+                                  <div className="flex items-center gap-3">
+                                    <RadioGroupItem value={optionField.value} id={item.id} />
+                                    <Label htmlFor={item.id} className="flex-grow font-normal">
+                                      <Input
+                                        {...optionField}
+                                        placeholder={`Option ${index + 1}`}
+                                        onChange={(e) => {
+                                          const oldValue = optionField.value;
+                                          optionField.onChange(e);
+                                          if (form.getValues("correctAnswer") === oldValue) {
+                                            form.setValue("correctAnswer", e.target.value, { shouldValidate: true });
+                                          }
+                                        }}
+                                      />
+                                    </Label>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => remove(index)}
+                                      disabled={fields.length <= 2}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span className="sr-only">Remove option</span>
+                                    </Button>
+                                  </div>
+                                )}
+                              />
+                            ))}
                           </RadioGroup>
                         </FormControl>
                         <FormMessage />
@@ -208,11 +224,12 @@ export default function EditQuestionPage() {
                     )}
                   />
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ text: "" })}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Option
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Option
                   </Button>
                 </div>
               )}
+
 
               {questionType === 'short_answer' && (
                 <FormField
