@@ -44,6 +44,8 @@ export default function AllPapersPage() {
   const filteredPapers = useMemo(() => {
     if (loading) return [];
     return allPapers.filter(paper => {
+      if (!paper.published) return false;
+
       let matchesCategory = true;
       if (selectedCategory !== 'all') {
         const descendantIds = getDescendantCategoryIds(selectedCategory, allCategories);

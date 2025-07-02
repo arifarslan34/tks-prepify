@@ -13,6 +13,7 @@ import {z} from 'genkit';
 
 const GeneratePaperDescriptionInputSchema = z.object({
   title: z.string().describe('The title of the question paper.'),
+  categoryName: z.string().describe('The full path/name of the category the paper belongs to (e.g., "Science / Physics").'),
 });
 export type GeneratePaperDescriptionInput = z.infer<typeof GeneratePaperDescriptionInputSchema>;
 
@@ -29,9 +30,10 @@ const prompt = ai.definePrompt({
   name: 'generatePaperDescriptionPrompt',
   input: {schema: GeneratePaperDescriptionInputSchema},
   output: {schema: GeneratePaperDescriptionOutputSchema},
-  prompt: `You are an expert content writer. Given the following question paper title, generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers practice question papers.
+  prompt: `You are an expert content writer. Given the following question paper title and its category, generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers practice question papers.
 
-Paper Title: {{{title}}}`,
+Paper Title: {{{title}}}
+Category: {{{categoryName}}}`,
 });
 
 const generatePaperDescriptionFlow = ai.defineFlow(

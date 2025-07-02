@@ -14,7 +14,7 @@ export default async function Home() {
   ]);
 
   const featuredCategories = allCategories.filter(c => c.featured && !c.subcategories?.length).slice(0, 4);
-  const featuredPapers = allPapers.filter(p => p.featured).slice(0, 3);
+  const featuredPapers = allPapers.filter(p => p.featured && p.published).slice(0, 3);
   
   return (
     <>

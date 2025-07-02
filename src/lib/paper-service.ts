@@ -22,6 +22,7 @@ function docToPaper(doc: DocumentData): Paper {
         duration: data.duration || 0,
         year: data.year,
         featured: data.featured || false,
+        published: data.published || false,
         keywords: data.keywords,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,

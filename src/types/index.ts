@@ -22,6 +22,7 @@ export interface Paper {
   duration: number; // in minutes
   year?: number;
   featured?: boolean;
+  published?: boolean;
   // SEO fields
   keywords?: string;
   metaTitle?: string;

@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import { fetchCategories, getFlattenedCategories } from "@/lib/category-service";
+import { fetchCategories, getFlattenedCategories, getCategoryPath } from "@/lib/category-service";
 import { getPaperById } from "@/lib/paper-service";
 import type { Category, Paper } from "@/types";
 import { doc, updateDoc } from "firebase/firestore";
@@ -43,6 +43,7 @@ const paperFormSchema = z.object({
     required_error: "Please select a category for this paper.",
   }),
   slug: z.string().optional(),
+  published: z.boolean().default(false),
   featured: z.boolean().default(false),
   questionCount: z.coerce.number().int().min(0, {
     message: "Number of questions cannot be negative.",
@@ -90,6 +91,7 @@ export default function EditPaperPage() {
                 form.reset({
                     ...paper,
                     year: paper.year || undefined,
+                    published: paper.published || false,
                 });
             } else {
                 toast({ title: "Error", description: "Paper not found.", variant: "destructive" });
@@ -109,13 +111,18 @@ export default function EditPaperPage() {
   
   async function handleGenerateDescription() {
     const title = form.getValues("title");
-    if (!title) {
-        toast({ title: "Title required", description: "Please enter a title to generate a description.", variant: "destructive" });
+    const categoryId = form.getValues("categoryId");
+
+    if (!title || !categoryId) {
+        toast({ title: "Title & Category Required", description: "Please enter a title and select a category to generate a description.", variant: "destructive" });
         return;
     }
+    const categoryPath = getCategoryPath(categoryId, allCategories);
+    const categoryName = categoryPath?.map(c => c.name).join(' / ') || '';
+
     setIsGeneratingDesc(true);
     try {
-        const result = await generatePaperDescription({ title });
+        const result = await generatePaperDescription({ title, categoryName });
         form.setValue("description", result.description, { shouldValidate: true });
         toast({ title: "Description Generated", description: "AI has created a description for you." });
     } catch (error) {
@@ -129,13 +136,18 @@ export default function EditPaperPage() {
   async function handleGenerateSeo() {
     const title = form.getValues("title");
     const description = form.getValues("description");
-    if (!title || !description) {
-        toast({ title: "Title and Description required", description: "Please enter a title and description to generate SEO details.", variant: "destructive" });
+    const categoryId = form.getValues("categoryId");
+
+    if (!title || !description || !categoryId) {
+        toast({ title: "Title, Description & Category Required", description: "Please provide all details to generate SEO content.", variant: "destructive" });
         return;
     }
+    const categoryPath = getCategoryPath(categoryId, allCategories);
+    const categoryName = categoryPath?.map(c => c.name).join(' / ') || '';
+
     setIsGeneratingSeo(true);
     try {
-        const result = await generatePaperSeoDetails({ title, description });
+        const result = await generatePaperSeoDetails({ title, description, categoryName });
         form.setValue("keywords", result.keywords, { shouldValidate: true });
         form.setValue("metaTitle", result.metaTitle, { shouldValidate: true });
         form.setValue("metaDescription", result.metaDescription, { shouldValidate: true });
@@ -155,6 +167,7 @@ export default function EditPaperPage() {
       const paperData = {
           ...data,
           slug: slugify(data.slug || data.title),
+          published: data.published || false,
       };
       await updateDoc(paperRef, paperData);
       toast({
@@ -266,6 +279,21 @@ export default function EditPaperPage() {
                                 You can only assign papers to subcategories that don't have their own children.
                             </FormDescription>
                             <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="published"
+                        render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                                <FormLabel className="text-base">Published</FormLabel>
+                                <FormDescription>Published papers will be visible on the public website.</FormDescription>
+                            </div>
+                            <FormControl>
+                                <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isSubmitting} />
+                            </FormControl>
                         </FormItem>
                         )}
                     />

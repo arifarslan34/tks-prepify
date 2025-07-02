@@ -34,9 +34,14 @@ export default function SolvedPaperPage() {
         setLoading(true);
         try {
             const fetchedPaper = await getPaperBySlug(slug);
-            setPaper(fetchedPaper);
+            if (fetchedPaper && fetchedPaper.published) {
+                setPaper(fetchedPaper);
+            } else {
+                setPaper(null); // Paper is not published or not found
+            }
         } catch (error) {
             console.error("Failed to fetch paper:", error);
+            setPaper(null);
         } finally {
             setLoading(false);
         }
@@ -55,8 +60,8 @@ export default function SolvedPaperPage() {
   if (!paper) {
     return (
       <div className="container mx-auto text-center py-20">
-        <h1 className="text-2xl font-bold">Paper not found</h1>
-        <p>This question paper could not be loaded.</p>
+        <h1 className="text-2xl font-bold">Paper Not Found</h1>
+        <p>This question paper could not be found or is not available.</p>
         <Button onClick={() => router.push('/papers')} className="mt-4">Go to Papers</Button>
       </div>
     );

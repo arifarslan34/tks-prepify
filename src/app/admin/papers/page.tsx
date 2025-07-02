@@ -171,6 +171,7 @@ export default function AdminPapersPage() {
                     <TableHead className="w-[30%]" >Title</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Slug</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-center">Questions</TableHead>
                     <TableHead className="text-center">Duration</TableHead>
                     <TableHead>
@@ -186,9 +187,14 @@ export default function AdminPapersPage() {
                     <TableRow key={paper.id}>
                         <TableCell className="font-medium">{paper.title}</TableCell>
                         <TableCell>
-                        <Badge variant="outline">{categoryName}</Badge>
+                          <Badge variant="outline">{categoryName}</Badge>
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">{paper.slug}</TableCell>
+                        <TableCell>
+                          <Badge variant={paper.published ? 'default' : 'secondary'}>
+                              {paper.published ? 'Published' : 'Draft'}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-center">{paper.questionCount}</TableCell>
                         <TableCell className="text-center">{paper.duration}</TableCell>
                         <TableCell className="text-right">
