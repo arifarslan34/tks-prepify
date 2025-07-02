@@ -1,10 +1,11 @@
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarTrigger, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutDashboard, FileText, Folder, Home, Users } from 'lucide-react';
+import { LayoutDashboard, FileText, Folder, Home, Users, Settings, Bell, Search } from 'lucide-react';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 
 export default function AdminLayout({
   children,
@@ -13,44 +14,44 @@ export default function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-        <Sidebar>
+        <Sidebar collapsible="icon">
           <SidebarHeader>
             <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
               <BookOpen className="h-6 w-6 text-primary" />
-              <span className="font-headline">Prepify Admin</span>
+              <span className="font-headline group-data-[collapsible=icon]:hidden">Prepify</span>
             </Link>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip="Dashboard">
                   <Link href="/admin/dashboard">
                     <LayoutDashboard />
-                    Dashboard
+                    <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip="Papers">
                   <Link href="/admin/papers">
                     <FileText />
-                    Papers
+                    <span className="group-data-[collapsible=icon]:hidden">Papers</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip="Categories">
                   <Link href="/admin/categories">
                     <Folder />
-                    Categories
+                    <span className="group-data-[collapsible=icon]:hidden">Categories</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip="Users">
                   <Link href="/admin/users">
                     <Users />
-                    Users
+                    <span className="group-data-[collapsible=icon]:hidden">Users</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -59,10 +60,18 @@ export default function AdminLayout({
           <SidebarFooter>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild tooltip="Settings" disabled>
+                        <Link href="#">
+                            <Settings />
+                            <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Back to Site">
                         <Link href="/">
                             <Home />
-                            Back to Site
+                            <span className="group-data-[collapsible=icon]:hidden">Back to Site</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -70,31 +79,46 @@ export default function AdminLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="flex items-center justify-between p-4 h-20 border-b sticky top-0 bg-background z-10">
-            <div className="md:hidden">
-                <SidebarTrigger />
+          <header className="flex items-center justify-between p-4 h-16 border-b sticky top-0 bg-background z-10">
+            <div className="flex items-center gap-4">
+                <div className="md:hidden">
+                    <SidebarTrigger />
+                </div>
+                <div className="hidden md:block">
+                    <SidebarTrigger />
+                </div>
+                 <div className="relative hidden lg:block">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search..." className="pl-8 w-full md:w-[200px] lg:w-[300px]" />
+                </div>
             </div>
-            <div className="flex-grow" />
-             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" size="icon" className="rounded-full">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src="https://placehold.co/40x40.png" alt="Admin" data-ai-hint="male avatar"/>
-                        <AvatarFallback>A</AvatarFallback>
-                      </Avatar>
-                      <span className="sr-only">Toggle user menu</span>
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled>Profile</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Toggle notifications</span>
+              </Button>
+               <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" size="icon" className="rounded-full">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src="https://placehold.co/40x40.png" alt="Admin" data-ai-hint="male avatar"/>
+                          <AvatarFallback>A</AvatarFallback>
+                        </Avatar>
+                        <span className="sr-only">Toggle user menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>Profile</DropdownMenuItem>
+                   <DropdownMenuItem disabled>Settings</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </header>
-          <main className="p-4 md:p-8">
+          <main className="p-4 sm:p-6 md:p-8 bg-muted/40 min-h-[calc(100vh-4rem)]">
             {children}
           </main>
         </SidebarInset>

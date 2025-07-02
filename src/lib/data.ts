@@ -1,4 +1,4 @@
-import type { Category, Paper, Question } from '@/types';
+import type { Category, Paper, Question, User } from '@/types';
 import { Atom, Calculator, Briefcase, Languages } from 'lucide-react';
 
 // Recursive function to find a category by its ID
@@ -159,4 +159,10 @@ export const questions: Question[] = [
   // Advanced Physics Problems (paper8) - Short Answer
   { id: 'q35', paperId: 'paper8', type: 'short_answer', questionText: 'Explain the concept of wave-particle duality.', correctAnswer: 'Wave-particle duality is the concept in quantum mechanics that every particle or quantum entity may be described as either a particle or a wave. It expresses the inability of the classical concepts "particle" or "wave" to fully describe the behavior of quantum-scale objects.', explanation: 'For example, light can behave as a wave (as in diffraction) and as a particle (as in the photoelectric effect, where it consists of photons). This principle is a fundamental concept of quantum mechanics.' },
   { id: 'q36', paperId: 'paper8', type: 'short_answer', questionText: 'What is meant by "spacetime" in the context of Einstein\'s theory of relativity?', correctAnswer: 'Spacetime is the four-dimensional continuum in which we live, combining the three dimensions of space (length, width, height) with the one dimension of time. In relativity, gravity is described as the curvature of spacetime caused by mass and energy.', explanation: 'Instead of being a passive backdrop, spacetime is an active participant in the dynamics of the universe. Massive objects warp spacetime, and this warping is what we perceive as gravity, guiding the motion of other objects.' },
+];
+
+export const users: User[] = [
+  { id: 'user-1', name: 'Admin User', email: 'admin@example.com', role: 'Admin', createdAt: '2023-10-01' },
+  { id: 'user-2', name: 'John Doe', email: 'john.doe@example.com', role: 'User', createdAt: '2023-10-15' },
+  { id: 'user-3', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'User', createdAt: '2023-11-05' },
 ];

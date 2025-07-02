@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getFlattenedCategories } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import React from "react";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -36,17 +37,23 @@ const categoryFormSchema = z.object({
 
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
-export default function NewCategoryPage() {
+
+// useSearchParams requires a Suspense boundary. We wrap the page in a client component
+// that can be suspended while the search params are read.
+function NewCategoryPageComponent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const flatCategories = getFlattenedCategories();
-
+  
+  const parentId = searchParams.get("parentId") || undefined;
+  
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: "",
       description: "",
-      parentId: undefined,
+      parentId: parentId === "none" ? undefined : parentId,
     },
   });
 
@@ -142,4 +149,12 @@ export default function NewCategoryPage() {
       </Card>
     </div>
   );
+}
+
+export default function NewCategoryPage() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <NewCategoryPageComponent />
+        </React.Suspense>
+    )
 }

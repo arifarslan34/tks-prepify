@@ -11,6 +11,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,15 +76,19 @@ export default function AdminCategoriesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                         <DropdownMenuItem>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Subcategory
+                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                         <DropdownMenuItem asChild>
+                          <Link href={`/admin/categories/new?parentId=${category.id}`}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Subcategory
+                          </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem disabled>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive" disabled>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>

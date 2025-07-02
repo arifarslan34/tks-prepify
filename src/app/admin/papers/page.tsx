@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -11,19 +15,37 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
-import { papers, getCategoryPath } from "@/lib/data";
-import Link from "next/link";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search } from "lucide-react";
+import { papers as allPapers, getCategoryPath, getFlattenedCategories } from "@/lib/data";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 export default function AdminPapersPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const flatCategories = getFlattenedCategories();
+
+  const papers = allPapers.filter(paper => {
+      const matchesSearch = paper.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || paper.categoryId.startsWith(selectedCategory);
+      return matchesSearch && matchesCategory;
+  });
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Manage Papers</h1>
+      <div className="flex items-center justify-between mb-6 gap-4">
+        <div>
+            <h1 className="text-3xl font-bold">Manage Papers</h1>
+            <p className="text-muted-foreground">A list of all question papers in the system.</p>
+        </div>
         <Button asChild>
           <Link href="/admin/papers/new">
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -33,8 +55,34 @@ export default function AdminPapersPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Papers</CardTitle>
-          <CardDescription>A list of all question papers in the system.</CardDescription>
+           <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by title..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="md:w-[280px]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {flatCategories.map(cat => (
+                  <SelectItem
+                    key={cat.id}
+                    value={cat.id}
+                    style={{ paddingLeft: `${1 + cat.level * 1.5}rem` }}
+                  >
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -70,14 +118,16 @@ export default function AdminPapersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                            <DropdownMenuItem disabled>
                             <Plus className="mr-2 h-4 w-4" />
                             Add/Edit Questions
                           </DropdownMenuItem>
                           <DropdownMenuItem disabled>
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit
+                            Edit Details
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive" disabled>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
