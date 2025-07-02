@@ -4,7 +4,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +22,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import React, { useState, useEffect, useMemo } from "react";
-import { fetchCategories, getFlattenedCategories } from "@/lib/category-service";
+import { fetchCategories, getFlattenedCategories, clearCategoriesCache } from "@/lib/category-service";
 import type { Category } from "@/types";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -48,6 +49,7 @@ function NewCategoryPageComponent() {
   
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -72,13 +74,35 @@ function NewCategoryPageComponent() {
     },
   });
 
-  function onSubmit(data: CategoryFormValues) {
-    console.log(data);
-    toast({
-      title: "Category Created",
-      description: "The new category has been saved (console only).",
-    });
-    router.push("/admin/categories");
+  async function onSubmit(data: CategoryFormValues) {
+    setIsSubmitting(true);
+    try {
+      const categoryData: { name: string; description: string; parentId?: string | null } = {
+        name: data.name,
+        description: data.description,
+        parentId: data.parentId === 'none' || !data.parentId ? null : data.parentId,
+      };
+
+      await addDoc(collection(db, "categories"), categoryData);
+      
+      clearCategoriesCache();
+
+      toast({
+        title: "Category Created",
+        description: "The new category has been saved successfully.",
+      });
+      router.push("/admin/categories");
+      router.refresh(); // To ensure server components re-fetch data
+    } catch (error) {
+      console.error("Error creating category: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to create the category. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (loading) {
@@ -92,7 +116,7 @@ function NewCategoryPageComponent() {
   return (
     <div className="space-y-6">
       <div>
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Categories
         </Button>
@@ -112,7 +136,7 @@ function NewCategoryPageComponent() {
                   <FormItem>
                     <FormLabel>Category Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Quantum Mechanics" {...field} />
+                      <Input placeholder="e.g., Quantum Mechanics" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormDescription>This is the public name for the category.</FormDescription>
                     <FormMessage />
@@ -126,7 +150,7 @@ function NewCategoryPageComponent() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="A brief description of the category..." {...field} />
+                      <Textarea placeholder="A brief description of the category..." {...field} disabled={isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -138,7 +162,7 @@ function NewCategoryPageComponent() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parent Category (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a parent category" />
@@ -161,10 +185,13 @@ function NewCategoryPageComponent() {
                 )}
               />
               <div className="flex justify-end gap-4">
-                <Button type="button" variant="outline" onClick={() => router.push('/admin/categories')}>
+                <Button type="button" variant="outline" onClick={() => router.push('/admin/categories')} disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit">Save Category</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Category
+                </Button>
               </div>
             </form>
           </Form>

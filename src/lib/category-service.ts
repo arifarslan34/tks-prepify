@@ -1,7 +1,7 @@
 
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Category } from '@/types';
+import type { Category, Paper } from '@/types';
 import { Atom, Calculator, Briefcase, Languages } from 'lucide-react';
 
 // NOTE: This is a simple in-memory cache. In a real-world application,
@@ -10,6 +10,11 @@ import { Atom, Calculator, Briefcase, Languages } from 'lucide-react';
 let categoriesCache: Category[] | null = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
+
+export function clearCategoriesCache() {
+  categoriesCache = null;
+  lastFetchTime = 0;
+}
 
 const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
   Atom,
