@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { categories, papers } from '@/lib/data';
+import { categories, papers, getCategoryById } from '@/lib/data';
 import { ArrowRight, Bookmark } from 'lucide-react';
 import Image from 'next/image';
 
@@ -51,7 +51,7 @@ export default function Home() {
             <Link key={category.id} href={`/papers?category=${category.id}`}>
               <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 group">
                 <CardHeader className="flex flex-row items-center gap-4">
-                  <category.icon className="w-8 h-8 text-primary" />
+                  {category.icon && <category.icon className="w-8 h-8 text-primary" />}
                   <CardTitle>{category.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -76,13 +76,15 @@ export default function Home() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {papers.slice(0, 3).map((paper) => (
+            {papers.slice(0, 3).map((paper) => {
+              const category = getCategoryById(paper.categoryId);
+              return (
               <Card key={paper.id} className="flex flex-col">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle>{paper.title}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">{paper.subCategory}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{category?.name || ''}</p>
                     </div>
                     <Button variant="ghost" size="icon" className="shrink-0">
                       <Bookmark className="h-5 w-5" />
@@ -99,7 +101,7 @@ export default function Home() {
                   </Button>
                 </div>
               </Card>
-            ))}
+            )})}
           </div>
         </div>
       </section>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { BarChart, Book, CheckCircle2, Lightbulb, Loader2, XCircle } from 'lucide-react';
-import { papers, questions as allQuestions } from '@/lib/data';
+import { papers, questions as allQuestions, getCategoryPath } from '@/lib/data';
 import type { Paper, Question, UserAnswer, TestResult } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,14 +63,20 @@ export default function ResultsPage() {
   }, [params.testId, router]);
 
   const handleGetFeedback = async (question: Question, userAnswer: string) => {
+    if (!result) return;
     setFeedback(prev => ({ ...prev, [question.id]: { loading: true } }));
+
+    const path = getCategoryPath(result.paper.categoryId);
+    const categoryName = path?.[0]?.name || 'General';
+    const subCategoryName = path && path.length > 0 ? path[path.length - 1].name : 'General';
+    
     try {
       const aiFeedback = await getPersonalizedFeedback({
         question: question.questionText,
         userAnswer: userAnswer || "No answer provided.",
         correctAnswer: question.correctAnswer,
-        category: result?.paper.subCategory || 'General',
-        subcategory: result?.paper.title || 'General',
+        category: categoryName,
+        subcategory: subCategoryName,
       });
       setFeedback(prev => ({ ...prev, [question.id]: { loading: false, ...aiFeedback } }));
     } catch (error) {

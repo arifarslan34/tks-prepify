@@ -1,20 +1,107 @@
 import type { Category, Paper, Question } from '@/types';
 import { Atom, Calculator, Briefcase, Languages } from 'lucide-react';
 
+// Recursive function to find a category by its ID
+function findCategory(categories: Category[], id: string): Category | undefined {
+  for (const category of categories) {
+    if (category.id === id) return category;
+    if (category.subcategories) {
+      const found = findCategory(category.subcategories, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+// Helper to get a category by ID from the main categories export
+export function getCategoryById(id: string): Category | undefined {
+  return findCategory(categories, id);
+}
+
+// Helper to get all descendant category IDs including the parent
+export function getDescendantCategoryIds(startId: string): string[] {
+  const ids: string[] = [];
+  const startCategory = findCategory(categories, startId);
+  if (!startCategory) return [];
+
+  const queue: Category[] = [startCategory];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    ids.push(current.id);
+    if (current.subcategories) {
+      queue.push(...current.subcategories);
+    }
+  }
+  return ids;
+}
+
+// Helper to get a flattened list of categories for UI elements like select dropdowns
+export function getFlattenedCategories(cats: Category[] = categories): { id: string; name: string }[] {
+  const flat: { id: string; name: string }[] = [];
+  function recurse(categories: Category[], level: number) {
+    for (const category of categories) {
+      const { subcategories, ...rest } = category;
+      flat.push({ ...rest, name: `${'  '.repeat(level * 2)}${rest.name}` });
+      if (subcategories) {
+        recurse(subcategories, level + 1);
+      }
+    }
+  }
+  recurse(cats, 0);
+  return flat;
+}
+
+// Helper to get the path (breadcrumbs) for a given category ID
+export function getCategoryPath(id: string): Category[] | null {
+  function findPath(cats: Category[], id: string, path: Category[]): Category[] | null {
+    for (const category of cats) {
+      const newPath = [...path, { ...category, subcategories: undefined }];
+      if (category.id === id) return newPath;
+      if (category.subcategories) {
+        const found = findPath(category.subcategories, id, newPath);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+  return findPath(categories, id, []);
+}
+
+
 export const categories: Category[] = [
-  { id: 'cat1', name: 'Science', description: 'Explore the wonders of science.', icon: Atom },
-  { id: 'cat2', name: 'Mathematics', description: 'Challenge your numerical skills.', icon: Calculator },
-  { id: 'cat3', name: 'Business Studies', description: 'Learn the fundamentals of business.', icon: Briefcase },
-  { id: 'cat4', name: 'Language Arts', description: 'Master the art of communication.', icon: Languages },
+  { 
+    id: 'cat1', name: 'Science', description: 'Explore the wonders of science.', icon: Atom,
+    subcategories: [
+      { id: 'cat1_1', name: 'Physics' },
+      { id: 'cat1_2', name: 'Chemistry' },
+    ]
+  },
+  { 
+    id: 'cat2', name: 'Mathematics', description: 'Challenge your numerical skills.', icon: Calculator,
+    subcategories: [
+      { id: 'cat2_1', name: 'Algebra' },
+      { id: 'cat2_2', name: 'Calculus' },
+    ]
+  },
+  { id: 'cat3', name: 'Business Studies', description: 'Learn the fundamentals of business.', icon: Briefcase,
+    subcategories: [
+      { id: 'cat3_1', name: 'Marketing' }
+    ]
+  },
+  { id: 'cat4', name: 'Language Arts', description: 'Master the art of communication.', icon: Languages,
+    subcategories: [
+      { id: 'cat4_1', name: 'English' }
+    ]
+  },
 ];
 
 export const papers: Paper[] = [
-  { id: 'paper1', title: 'Physics Fundamentals', description: 'Test your knowledge on basic physics principles.', categoryId: 'cat1', subCategory: 'Physics', questionCount: 5, duration: 10 },
-  { id: 'paper2', title: 'Algebra I', description: 'A test on introductory algebra concepts.', categoryId: 'cat2', subCategory: 'Algebra', questionCount: 5, duration: 15 },
-  { id: 'paper3', title: 'Marketing Basics', description: 'Covering the core concepts of marketing.', categoryId: 'cat3', subCategory: 'Marketing', questionCount: 5, duration: 10 },
-  { id: 'paper4', title: 'Grammar and Punctuation', description: 'Evaluate your command of English grammar.', categoryId: 'cat4', subCategory: 'English', questionCount: 5, duration: 5 },
-  { id: 'paper5', title: 'Chemistry Basics', description: 'A primer on chemical reactions and the periodic table.', categoryId: 'cat1', subCategory: 'Chemistry', questionCount: 5, duration: 10 },
-  { id: 'paper6', title: 'Calculus I', description: 'Introduction to derivatives and integrals.', categoryId: 'cat2', subCategory: 'Calculus', questionCount: 5, duration: 20 },
+  { id: 'paper1', title: 'Physics Fundamentals', description: 'Test your knowledge on basic physics principles.', categoryId: 'cat1_1', questionCount: 5, duration: 10 },
+  { id: 'paper2', title: 'Algebra I', description: 'A test on introductory algebra concepts.', categoryId: 'cat2_1', questionCount: 5, duration: 15 },
+  { id: 'paper3', title: 'Marketing Basics', description: 'Covering the core concepts of marketing.', categoryId: 'cat3_1', questionCount: 5, duration: 10 },
+  { id: 'paper4', title: 'Grammar and Punctuation', description: 'Evaluate your command of English grammar.', categoryId: 'cat4_1', questionCount: 5, duration: 5 },
+  { id: 'paper5', title: 'Chemistry Basics', description: 'A primer on chemical reactions and the periodic table.', categoryId: 'cat1_2', questionCount: 5, duration: 10 },
+  { id: 'paper6', title: 'Calculus I', description: 'Introduction to derivatives and integrals.', categoryId: 'cat2_2', questionCount: 5, duration: 20 },
 ];
 
 export const questions: Question[] = [

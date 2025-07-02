@@ -1,8 +1,9 @@
 export interface Category {
   id: string;
   name: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  description?: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  subcategories?: Category[];
 }
 
 export interface Paper {
@@ -10,7 +11,6 @@ export interface Paper {
   title: string;
   description: string;
   categoryId: string;
-  subCategory: string;
   questionCount: number;
   duration: number; // in minutes
 }

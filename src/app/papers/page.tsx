@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { categories, papers } from '@/lib/data';
+import { papers, getFlattenedCategories, getDescendantCategoryIds, getCategoryById } from '@/lib/data';
 import { Search, Bookmark, Clock, ListChecks } from 'lucide-react';
 
 export default function PapersPage() {
@@ -17,10 +17,18 @@ export default function PapersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
+  const flatCategories = useMemo(() => getFlattenedCategories(), []);
+
   const filteredPapers = papers.filter(paper => {
-    const matchesCategory = selectedCategory === 'all' || paper.categoryId === selectedCategory;
+    let matchesCategory = true;
+    if (selectedCategory !== 'all') {
+      const descendantIds = getDescendantCategoryIds(selectedCategory);
+      matchesCategory = descendantIds.includes(paper.categoryId);
+    }
+    
+    const categoryName = getCategoryById(paper.categoryId)?.name || '';
     const matchesSearch = paper.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          paper.subCategory.toLowerCase().includes(searchTerm.toLowerCase());
+                          categoryName.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -47,7 +55,7 @@ export default function PapersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {categories.map(cat => (
+            {flatCategories.map(cat => (
               <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
             ))}
           </SelectContent>
@@ -56,12 +64,14 @@ export default function PapersPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredPapers.length > 0 ? (
-          filteredPapers.map(paper => (
+          filteredPapers.map(paper => {
+            const category = getCategoryById(paper.categoryId);
+            return (
             <Card key={paper.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-medium text-primary">{paper.subCategory}</p>
+                    <p className="text-sm font-medium text-primary">{category?.name}</p>
                     <CardTitle className="mt-1">{paper.title}</CardTitle>
                   </div>
                   <Button variant="ghost" size="icon" className="shrink-0 group">
@@ -89,7 +99,7 @@ export default function PapersPage() {
                 </Button>
               </div>
             </Card>
-          ))
+          )})
         ) : (
           <div className="col-span-full text-center py-16">
             <p className="text-xl text-muted-foreground">No papers found.</p>
