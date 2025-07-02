@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useState, useEffect, useMemo } from 'react';
-import { fetchCategories, getFlattenedCategories, getCategoryPath } from '@/lib/category-service';
+import { fetchCategories, getFlattenedCategories, getCategoryPath, getCategoryById } from '@/lib/category-service';
 import type { Category } from '@/types';
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -167,9 +167,24 @@ export default function NewPaperPage() {
   async function onSubmit(data: PaperFormValues) {
     setIsSubmitting(true);
     try {
+        const getSlug = () => {
+            if (data.slug) {
+                return slugify(data.slug);
+            }
+            const category = getCategoryById(data.categoryId, allCategories);
+            // The category slug from the service is the full path e.g., "science/physics"
+            const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
+            const titleSlug = slugify(`${data.title} ${data.year || ''} ${data.session || ''}`.trim());
+
+            if (categorySlug) {
+                return `${categorySlug}-${titleSlug}`;
+            }
+            return titleSlug;
+        }
+
         const paperData = {
             ...data,
-            slug: slugify(data.slug || data.title),
+            slug: getSlug(),
             published: data.published || false,
             session: data.session || null,
         };
@@ -234,7 +249,7 @@ export default function NewPaperPage() {
                             <FormControl>
                             <Input placeholder="e.g., physics-101-final" {...field} disabled={isSubmitting} />
                             </FormControl>
-                            <FormDescription>If left blank, the slug will be generated from the title.</FormDescription>
+                            <FormDescription>If left blank, a detailed slug will be generated from the title, category, year, and session.</FormDescription>
                             <FormMessage />
                         </FormItem>
                         )}

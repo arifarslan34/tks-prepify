@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import { fetchCategories, getFlattenedCategories, getCategoryPath } from "@/lib/category-service";
+import { fetchCategories, getFlattenedCategories, getCategoryPath, getCategoryById } from "@/lib/category-service";
 import { getPaperById } from "@/lib/paper-service";
 import type { Category, Paper } from "@/types";
 import { doc, updateDoc } from "firebase/firestore";
@@ -185,10 +185,24 @@ export default function EditPaperPage() {
   async function onSubmit(data: PaperFormValues) {
     setIsSubmitting(true);
     try {
+      const getSlug = () => {
+        if (data.slug) {
+            return slugify(data.slug);
+        }
+        const category = getCategoryById(data.categoryId, allCategories);
+        const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
+        const titleSlug = slugify(`${data.title} ${data.year || ''} ${data.session || ''}`.trim());
+
+        if (categorySlug) {
+            return `${categorySlug}-${titleSlug}`;
+        }
+        return titleSlug;
+      }
+
       const paperRef = doc(db, "papers", paperId);
       const paperData = {
           ...data,
-          slug: slugify(data.slug || data.title),
+          slug: getSlug(),
           published: data.published || false,
           session: data.session || null,
       };
@@ -255,7 +269,7 @@ export default function EditPaperPage() {
                             <FormControl>
                             <Input {...field} disabled={isSubmitting} />
                             </FormControl>
-                            <FormDescription>If left blank, the slug will be generated from the title.</FormDescription>
+                            <FormDescription>If left blank, a detailed slug will be generated from the title, category, year, and session.</FormDescription>
                             <FormMessage />
                         </FormItem>
                         )}
