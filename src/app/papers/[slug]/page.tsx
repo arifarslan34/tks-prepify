@@ -9,25 +9,35 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { getIdFromSlug } from '@/lib/utils';
+import { getPaperBySlug } from '@/lib/category-service';
 
 export default function SolvedPaperPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
-  const paperId = getIdFromSlug(slug);
-
-  const paper = papers.find(p => p.id === paperId);
-  const questions = allQuestions.filter(q => q.paperId === paperId);
-
+  
+  const paper = getPaperBySlug(slug);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const questionsPerPage = 2;
 
-  if (!paper || questions.length === 0) {
+  if (!paper) {
     return (
       <div className="container mx-auto text-center py-20">
         <h1 className="text-2xl font-bold">Paper not found</h1>
         <p>This question paper could not be loaded.</p>
+        <Button onClick={() => router.push('/papers')} className="mt-4">Go to Papers</Button>
+      </div>
+    );
+  }
+  
+  const questions = allQuestions.filter(q => q.paperId === paper.id);
+
+  if (questions.length === 0) {
+     return (
+      <div className="container mx-auto text-center py-20">
+        <h1 className="text-2xl font-bold">No Questions Found</h1>
+        <p>There are no questions available for this paper yet.</p>
         <Button onClick={() => router.push('/papers')} className="mt-4">Go to Papers</Button>
       </div>
     );

@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { papers } from '@/lib/data';
 import { fetchCategories, getDescendantCategoryIds } from '@/lib/category-service';
 import { ArrowRight, Folder, FileText } from 'lucide-react';
-import { slugify } from '@/lib/utils';
 
 export default async function CategoriesPage() {
   const allTopLevelCategories = await fetchCategories();
@@ -22,7 +21,7 @@ export default async function CategoriesPage() {
             const subCategoryCount = category.subcategories?.length || 0;
 
             return (
-              <Link key={category.id} href={`/categories/${category.id}-${slugify(category.name)}`} className="group">
+              <Link key={category.id} href={`/categories/${category.slug}`} className="group">
                 <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 h-full hover:border-primary">
                   <CardContent className="p-6 flex flex-col h-full">
                     <div className="flex justify-between items-start mb-4">

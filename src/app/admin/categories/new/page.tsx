@@ -27,6 +27,7 @@ import type { Category } from "@/types";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Switch } from "@/components/ui/switch";
+import { slugify } from "@/lib/utils";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -80,11 +81,12 @@ function NewCategoryPageComponent() {
   async function onSubmit(data: CategoryFormValues) {
     setIsSubmitting(true);
     try {
-      const categoryData: { name: string; description: string; parentId?: string | null; featured?: boolean; } = {
+      const categoryData: { name: string; description: string; parentId?: string | null; featured?: boolean; slug: string; } = {
         name: data.name,
         description: data.description,
         parentId: data.parentId === 'none' || !data.parentId ? null : data.parentId,
         featured: data.featured || false,
+        slug: slugify(data.name),
       };
 
       await addDoc(collection(db, "categories"), categoryData);

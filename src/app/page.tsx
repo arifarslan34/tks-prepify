@@ -6,7 +6,6 @@ import { papers } from '@/lib/data';
 import { fetchCategories, getDescendantCategoryIds } from '@/lib/category-service';
 import { ArrowRight, Bookmark, FileText, Folder } from 'lucide-react';
 import Image from 'next/image';
-import { slugify } from '@/lib/utils';
 import { getCategoryById } from '@/lib/category-service';
 
 export default async function Home() {
@@ -60,7 +59,7 @@ export default async function Home() {
               const subCategoryCount = category.subcategories?.length || 0;
 
               return (
-                <Link key={category.id} href={`/categories/${category.id}-${slugify(category.name)}`} className="group">
+                <Link key={category.id} href={`/categories/${category.slug}`} className="group">
                   <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 h-full hover:border-primary">
                     <CardContent className="p-6 flex flex-col h-full">
                       <div className="flex justify-between items-start mb-4">
@@ -140,7 +139,7 @@ export default async function Home() {
                 </CardContent>
                 <div className="px-6 pb-6">
                   <Button className="w-full" asChild>
-                    <Link href={`/papers/${paper.id}-${slugify(paper.title)}`}>View Paper</Link>
+                    <Link href={`/papers/${paper.slug}`}>View Paper</Link>
                   </Button>
                 </div>
               </Card>

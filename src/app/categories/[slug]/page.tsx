@@ -8,15 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { papers as allPapers } from '@/lib/data';
-import { getIdFromSlug, slugify } from '@/lib/utils';
 import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle, Loader2 } from 'lucide-react';
 import type { Category } from '@/types';
-import { fetchCategories, getCategoryById, getCategoryPath, getDescendantCategoryIds } from '@/lib/category-service';
+import { fetchCategories, getCategoryBySlug, getCategoryPath, getDescendantCategoryIds } from '@/lib/category-service';
 
 export default function CategoryPage() {
     const params = useParams();
     const slug = params.slug as string;
-    const categoryId = getIdFromSlug(slug);
 
     const [allCategories, setAllCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,9 +37,8 @@ export default function CategoryPage() {
         );
     }
     
-    const category = getCategoryById(categoryId, allCategories);
-    const categoryPath = getCategoryPath(categoryId, allCategories);
-
+    const category = getCategoryBySlug(slug, allCategories);
+    
     if (!category) {
         return (
             <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-8 md:py-12 text-center">
@@ -52,9 +49,11 @@ export default function CategoryPage() {
             </div>
         );
     }
+    
+    const categoryPath = getCategoryPath(category.id, allCategories);
 
     const subCategories = category.subcategories || [];
-    const papersInCategory = allPapers.filter(p => p.categoryId === categoryId);
+    const papersInCategory = allPapers.filter(p => p.categoryId === category.id);
 
     const getPaperCount = (catId: string) => {
         const descendantIds = getDescendantCategoryIds(catId, allCategories);
@@ -76,7 +75,7 @@ export default function CategoryPage() {
                             {isLast ? (
                                 <span className="text-foreground font-medium">{p.name}</span>
                             ) : (
-                                <Link href={`/categories/${p.id}-${slugify(p.name)}`} className="hover:text-primary">
+                                <Link href={`/categories/${p.slug}`} className="hover:text-primary">
                                     {p.name}
                                 </Link>
                             )}
@@ -100,7 +99,7 @@ export default function CategoryPage() {
                         {subCategories.map(sub => {
                             const paperCount = getPaperCount(sub.id);
                             return (
-                                <Link key={sub.id} href={`/categories/${sub.id}-${slugify(sub.name)}`} className="group">
+                                <Link key={sub.id} href={`/categories/${sub.slug}`} className="group">
                                     <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 h-full hover:border-primary">
                                         <CardContent className="p-6 flex flex-col h-full">
                                             <div className="flex-grow">
@@ -155,7 +154,7 @@ export default function CategoryPage() {
                                 </CardContent>
                                 <div className="p-6 pt-0 mt-auto">
                                     <Button asChild className="w-full">
-                                        <Link href={`/papers/${paper.id}-${slugify(paper.title)}`}>
+                                        <Link href={`/papers/${paper.slug}`}>
                                             Start Studying
                                             <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>

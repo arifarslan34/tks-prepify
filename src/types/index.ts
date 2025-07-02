@@ -1,6 +1,8 @@
+
 export interface Category {
   id: string;
   name: string;
+  slug: string;
   description?: string;
   icon?: React.ComponentType<{ className?: string }>;
   subcategories?: Category[];
@@ -10,6 +12,7 @@ export interface Category {
 export interface Paper {
   id: string;
   title: string;
+  slug: string;
   description: string;
   categoryId: string;
   questionCount: number;

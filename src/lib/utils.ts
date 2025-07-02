@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -16,9 +17,4 @@ export function slugify(text: string): string {
     .replace(/\-\-+/g, '-')         // Replace multiple - with single -
     .replace(/^-+/, '')             // Trim - from start of text
     .replace(/-+$/, '');            // Trim - from end of text
-}
-
-export function getIdFromSlug(slug: string): string {
-  if (!slug) return '';
-  return slug.split('-')[0];
 }

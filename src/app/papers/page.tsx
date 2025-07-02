@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { papers as allPapers } from '@/lib/data';
 import { fetchCategories, getFlattenedCategories, getDescendantCategoryIds, getCategoryById } from '@/lib/category-service';
 import type { Category } from '@/types';
-import { slugify } from '@/lib/utils';
 import { Search, Bookmark, Clock, ListChecks, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -122,7 +121,7 @@ export default function AllPapersPage() {
                     </CardContent>
                     <div className="p-6 pt-0">
                     <Button asChild className="w-full">
-                        <Link href={`/papers/${paper.id}-${slugify(paper.title)}`}>View Paper</Link>
+                        <Link href={`/papers/${paper.slug}`}>View Paper</Link>
                     </Button>
                     </div>
                 </Card>
