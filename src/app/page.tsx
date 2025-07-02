@@ -100,7 +100,7 @@ export default async function Home() {
         <div className="text-center mt-12">
           <Button asChild size="lg" variant="outline">
               <Link href="/categories">
-                  Browse All Categories
+                  Browse All Featured Categories
                   <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
           </Button>
