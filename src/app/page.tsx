@@ -6,6 +6,22 @@ import { fetchPapers } from '@/lib/paper-service';
 import { fetchCategories, getDescendantCategoryIds, getCategoryById } from '@/lib/category-service';
 import { ArrowRight, Bookmark, FileText, Folder } from 'lucide-react';
 import Image from 'next/image';
+import type { Category } from '@/types';
+
+// Helper function to recursively find all featured categories from the tree
+function getAllFeaturedCategories(categories: Category[]): Category[] {
+  let featured: Category[] = [];
+  for (const category of categories) {
+    if (category.featured) {
+      featured.push(category);
+    }
+    if (category.subcategories && category.subcategories.length > 0) {
+      featured = featured.concat(getAllFeaturedCategories(category.subcategories));
+    }
+  }
+  return featured;
+}
+
 
 export default async function Home() {
   const [allCategories, allPapers] = await Promise.all([
@@ -13,7 +29,7 @@ export default async function Home() {
     fetchPapers()
   ]);
 
-  const featuredCategories = allCategories.filter(c => c.featured && !c.subcategories?.length).slice(0, 4);
+  const featuredCategories = getAllFeaturedCategories(allCategories).slice(0, 4);
   const featuredPapers = allPapers.filter(p => p.featured && p.published).slice(0, 3);
   
   return (
