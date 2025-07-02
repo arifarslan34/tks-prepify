@@ -187,27 +187,27 @@ export default function CopyPaperPage() {
     }
   }
 
+  const getSlug = (data: PaperFormValues) => {
+    if (data.slug) {
+        return slugify(data.slug);
+    }
+    const category = getCategoryById(data.categoryId, allCategories);
+    const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
+    const sessionForSlug = data.session === 'none' ? '' : data.session || '';
+    const titleSlug = slugify(`${data.title} ${data.year || ''} ${sessionForSlug}`.trim());
+
+    if (categorySlug) {
+        return `${categorySlug}-${titleSlug}`;
+    }
+    return titleSlug;
+  };
+
   async function onSubmit(data: PaperFormValues) {
     setIsSubmitting(true);
     try {
-      const getSlug = () => {
-        if (data.slug) {
-            return slugify(data.slug);
-        }
-        const category = getCategoryById(data.categoryId, allCategories);
-        const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
-        const sessionForSlug = data.session === 'none' ? '' : data.session || '';
-        const titleSlug = slugify(`${data.title} ${data.year || ''} ${sessionForSlug}`.trim());
-
-        if (categorySlug) {
-            return `${categorySlug}-${titleSlug}`;
-        }
-        return titleSlug;
-      }
-
       const paperData = {
           ...data,
-          slug: getSlug(),
+          slug: getSlug(data),
           published: data.published || false,
           session: data.session === 'none' || !data.session ? null : data.session,
       };
@@ -220,8 +220,7 @@ export default function CopyPaperPage() {
       });
       router.push("/admin/papers");
       router.refresh();
-    } catch (error)
-     {
+    } catch (error) {
       console.error("Error copying paper: ", error);
       toast({ title: "Error", description: "Failed to copy the paper.", variant: "destructive" });
     } finally {
