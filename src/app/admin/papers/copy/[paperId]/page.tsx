@@ -94,9 +94,9 @@ export default function CopyPaperPage() {
                 form.reset({
                     ...sourcePaper,
                     title: `Copy of ${sourcePaper.title}`,
-                    slug: '',
-                    published: false,
-                    featured: false,
+                    slug: '', // Reset slug
+                    published: false, // Default to not published
+                    featured: false, // Default to not featured
                     year: sourcePaper.year || undefined,
                     session: sourcePaper.session || 'none',
                 });
@@ -192,41 +192,41 @@ export default function CopyPaperPage() {
   async function onSubmit(data: PaperFormValues) {
     setIsSubmitting(true);
     try {
-      const getSlug = () => {
-        if (data.slug) {
-            return slugify(data.slug);
-        }
-        const category = getCategoryById(data.categoryId, allCategories);
-        const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
-        const sessionForSlug = data.session === 'none' ? '' : data.session || '';
-        const titleSlug = slugify(`${data.title} ${data.year || ''} ${sessionForSlug}`.trim());
+        const getSlug = () => {
+            if (data.slug) {
+                return slugify(data.slug);
+            }
+            const category = getCategoryById(data.categoryId, allCategories);
+            const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
+            const sessionForSlug = data.session === 'none' ? '' : data.session || '';
+            const titleSlug = slugify(`${data.title} ${data.year || ''} ${sessionForSlug}`.trim());
 
-        if (categorySlug) {
-            return `${categorySlug}-${titleSlug}`;
-        }
-        return titleSlug;
-      };
+            if (categorySlug) {
+                return `${categorySlug}-${titleSlug}`;
+            }
+            return titleSlug;
+        };
 
-      const paperData = {
+        const paperData = {
           ...data,
           slug: getSlug(),
           published: data.published || false,
           session: data.session === 'none' || !data.session ? null : data.session,
-      };
+        };
       
-      await addDoc(collection(db, "papers"), paperData);
+        await addDoc(collection(db, "papers"), paperData);
       
-      toast({
-        title: "Paper Copied Successfully",
-        description: "The new paper has been created. Note: Questions are not copied and must be added manually.",
-      });
-      router.push("/admin/papers");
-      router.refresh();
+        toast({
+            title: "Paper Copied Successfully",
+            description: "The new paper has been created. Note: Questions are not copied and must be added manually.",
+        });
+        router.push("/admin/papers");
+        router.refresh();
     } catch (error) {
-      console.error("Error copying paper: ", error);
-      toast({ title: "Error", description: "Failed to copy the paper.", variant: "destructive" });
+        console.error("Error copying paper: ", error);
+        toast({ title: "Error", description: "Failed to copy the paper.", variant: "destructive" });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   }
 
