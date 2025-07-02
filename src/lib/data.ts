@@ -109,15 +109,15 @@ export const categories: Category[] = [
 ];
 
 export const papers: Paper[] = [
-  { id: 'paper1', title: 'Physics Fundamentals', description: 'Test your knowledge on basic physics principles.', categoryId: 'cat1_1', questionCount: 5, duration: 10 },
-  { id: 'paper2', title: 'Algebra I', description: 'A test on introductory algebra concepts.', categoryId: 'cat2_1', questionCount: 5, duration: 15 },
-  { id: 'paper3', title: 'Marketing Basics', description: 'Covering the core concepts of marketing.', categoryId: 'cat3_1', questionCount: 5, duration: 10 },
-  { id: 'paper4', title: 'Grammar and Punctuation', description: 'Evaluate your command of English grammar.', categoryId: 'cat4_1', questionCount: 5, duration: 5 },
-  { id: 'paper5', title: 'Chemistry Basics', description: 'A primer on chemical reactions and the periodic table.', categoryId: 'cat1_2', questionCount: 5, duration: 10 },
-  { id: 'paper6', title: 'Calculus I', description: 'Introduction to derivatives and integrals.', categoryId: 'cat2_2', questionCount: 5, duration: 20 },
-  { id: 'paper7', title: 'Literary Analysis', description: 'A mix of MCQs and short answers on famous literary works.', categoryId: 'cat4_2', questionCount: 4, duration: 15 },
-  { id: 'paper8', title: 'Advanced Physics Problems', description: 'Solve complex problems that require written explanations.', categoryId: 'cat1_1', questionCount: 2, duration: 20 },
-  { id: 'paper9', title: 'Number Theory', description: 'A paper with multiple correct answers.', categoryId: 'cat2_1', questionCount: 1, duration: 5 },
+  { id: 'paper1', title: 'Physics Fundamentals', description: 'Test your knowledge on basic physics principles.', categoryId: 'cat1_1', questionCount: 5, duration: 10, year: 2023, featured: true },
+  { id: 'paper2', title: 'Algebra I', description: 'A test on introductory algebra concepts.', categoryId: 'cat2_1', questionCount: 5, duration: 15, year: 2023 },
+  { id: 'paper3', title: 'Marketing Basics', description: 'Covering the core concepts of marketing.', categoryId: 'cat3_1', questionCount: 5, duration: 10, year: 2022 },
+  { id: 'paper4', title: 'Grammar and Punctuation', description: 'Evaluate your command of English grammar.', categoryId: 'cat4_1', questionCount: 5, duration: 5, year: 2023 },
+  { id: 'paper5', title: 'Chemistry Basics', description: 'A primer on chemical reactions and the periodic table.', categoryId: 'cat1_2', questionCount: 5, duration: 10, year: 2022 },
+  { id: 'paper6', title: 'Calculus I', description: 'Introduction to derivatives and integrals.', categoryId: 'cat2_2', questionCount: 5, duration: 20, year: 2021 },
+  { id: 'paper7', title: 'Literary Analysis', description: 'A mix of MCQs and short answers on famous literary works.', categoryId: 'cat4_2', questionCount: 4, duration: 15, year: 2023 },
+  { id: 'paper8', title: 'Advanced Physics Problems', description: 'Solve complex problems that require written explanations.', categoryId: 'cat1_1', questionCount: 2, duration: 20, year: 2021 },
+  { id: 'paper9', title: 'Number Theory', description: 'A paper with multiple correct answers.', categoryId: 'cat2_1', questionCount: 1, duration: 5, year: 2024, featured: true },
 ];
 
 export const questions: Question[] = [

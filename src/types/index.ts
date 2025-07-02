@@ -13,6 +13,8 @@ export interface Paper {
   categoryId: string;
   questionCount: number;
   duration: number; // in minutes
+  year?: number;
+  featured?: boolean;
 }
 
 export interface Question {
