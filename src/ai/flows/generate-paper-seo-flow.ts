@@ -15,6 +15,7 @@ const GeneratePaperSeoDetailsInputSchema = z.object({
   title: z.string().describe('The title of the question paper.'),
   description: z.string().describe('The description of the question paper.'),
   categoryName: z.string().describe('The full path/name of the category the paper belongs to (e.g., "Science / Physics").'),
+  year: z.number().optional().describe('The year the paper was published, if available.'),
 });
 export type GeneratePaperSeoDetailsInput = z.infer<typeof GeneratePaperSeoDetailsInputSchema>;
 
@@ -33,11 +34,12 @@ const prompt = ai.definePrompt({
   name: 'generatePaperSeoDetailsPrompt',
   input: {schema: GeneratePaperSeoDetailsInputSchema},
   output: {schema: GeneratePaperSeoDetailsOutputSchema},
-  prompt: `You are an SEO expert. Given the following question paper title, description, and its category, generate optimized SEO content.
+  prompt: `You are an SEO expert. Given the following past paper title, description, its category, and year (if provided), generate optimized SEO content.
 
 Paper Title: {{{title}}}
 Paper Description: {{{description}}}
 Category: {{{categoryName}}}
+{{#if year}}Year: {{{year}}}{{/if}}
 
 Generate a comma-separated list of keywords, a meta title, and a meta description. The meta title should be compelling and under 60 characters. The meta description should be engaging and under 160 characters.`,
 });

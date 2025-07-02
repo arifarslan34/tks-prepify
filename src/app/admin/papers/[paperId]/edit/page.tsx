@@ -112,6 +112,7 @@ export default function EditPaperPage() {
   async function handleGenerateDescription() {
     const title = form.getValues("title");
     const categoryId = form.getValues("categoryId");
+    const year = form.getValues("year");
 
     if (!title || !categoryId) {
         toast({ title: "Title & Category Required", description: "Please enter a title and select a category to generate a description.", variant: "destructive" });
@@ -122,7 +123,7 @@ export default function EditPaperPage() {
 
     setIsGeneratingDesc(true);
     try {
-        const result = await generatePaperDescription({ title, categoryName });
+        const result = await generatePaperDescription({ title, categoryName, year });
         form.setValue("description", result.description, { shouldValidate: true });
         toast({ title: "Description Generated", description: "AI has created a description for you." });
     } catch (error) {
@@ -137,6 +138,7 @@ export default function EditPaperPage() {
     const title = form.getValues("title");
     const description = form.getValues("description");
     const categoryId = form.getValues("categoryId");
+    const year = form.getValues("year");
 
     if (!title || !description || !categoryId) {
         toast({ title: "Title, Description & Category Required", description: "Please provide all details to generate SEO content.", variant: "destructive" });
@@ -147,7 +149,7 @@ export default function EditPaperPage() {
 
     setIsGeneratingSeo(true);
     try {
-        const result = await generatePaperSeoDetails({ title, description, categoryName });
+        const result = await generatePaperSeoDetails({ title, description, categoryName, year });
         form.setValue("keywords", result.keywords, { shouldValidate: true });
         form.setValue("metaTitle", result.metaTitle, { shouldValidate: true });
         form.setValue("metaDescription", result.metaDescription, { shouldValidate: true });

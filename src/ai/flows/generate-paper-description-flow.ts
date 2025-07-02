@@ -14,6 +14,7 @@ import {z} from 'genkit';
 const GeneratePaperDescriptionInputSchema = z.object({
   title: z.string().describe('The title of the question paper.'),
   categoryName: z.string().describe('The full path/name of the category the paper belongs to (e.g., "Science / Physics").'),
+  year: z.number().optional().describe('The year the paper was published, if available.'),
 });
 export type GeneratePaperDescriptionInput = z.infer<typeof GeneratePaperDescriptionInputSchema>;
 
@@ -30,10 +31,11 @@ const prompt = ai.definePrompt({
   name: 'generatePaperDescriptionPrompt',
   input: {schema: GeneratePaperDescriptionInputSchema},
   output: {schema: GeneratePaperDescriptionOutputSchema},
-  prompt: `You are an expert content writer. Given the following question paper title and its category, generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers practice question papers.
+  prompt: `You are an expert content writer. Given the following past paper title, its category, and year (if provided), generate a concise and informative description for it. The description should be about 2-3 sentences long and suitable for a website that offers past question papers for study.
 
 Paper Title: {{{title}}}
-Category: {{{categoryName}}}`,
+Category: {{{categoryName}}}
+{{#if year}}Year: {{{year}}}{{/if}}`,
 });
 
 const generatePaperDescriptionFlow = ai.defineFlow(
