@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { categories, papers, getDescendantCategoryIds } from '@/lib/data';
+import { papers } from '@/lib/data';
+import { fetchCategories, getDescendantCategoryIds } from '@/lib/category-service';
 import { ArrowRight, Folder, FileText } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const allCategories = await fetchCategories();
+
   return (
     <div className="container mx-auto px-16 py-16 md:py-24">
       <div className="text-center mb-12">
@@ -12,8 +15,8 @@ export default function CategoriesPage() {
         <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {categories.map((category) => {
-          const paperCount = papers.filter(p => getDescendantCategoryIds(category.id).includes(p.categoryId)).length;
+        {allCategories.map((category) => {
+          const paperCount = papers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId)).length;
           const subCategoryCount = category.subcategories?.length || 0;
 
           return (

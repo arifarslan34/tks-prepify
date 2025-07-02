@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, PlusCircle, Trash2 } from "lucide-react";
-import { getPaperById } from "@/lib/data";
+import { getPaperById } from "@/lib/category-service";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import React from "react";

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Table,
@@ -22,8 +22,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search } from "lucide-react";
-import { papers as allPapers, getCategoryPath, getFlattenedCategories } from "@/lib/data";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Search, Loader2 } from "lucide-react";
+import { papers as allPapers } from "@/lib/data";
+import { fetchCategories, getCategoryPath, getFlattenedCategories } from "@/lib/category-service";
+import type { Category } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -33,8 +35,21 @@ export default function AdminPapersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
+  
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const flatCategories = getFlattenedCategories();
+  useEffect(() => {
+    const loadData = async () => {
+        setLoading(true);
+        const cats = await fetchCategories();
+        setAllCategories(cats);
+        setLoading(false);
+    };
+    loadData();
+  }, []);
+  
+  const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
 
   const papers = allPapers.filter(paper => {
       const matchesSearch = paper.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -68,7 +83,7 @@ export default function AdminPapersPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={loading}>
               <SelectTrigger className="md:w-[280px]">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
@@ -88,71 +103,77 @@ export default function AdminPapersPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-center">Questions</TableHead>
-                <TableHead className="text-center">Duration (min)</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {papers.map((paper) => {
-                const categoryPath = getCategoryPath(paper.categoryId);
-                const categoryName = categoryPath?.map(c => c.name).join(' / ') || 'N/A';
-                return (
-                  <TableRow key={paper.id}>
-                    <TableCell className="font-medium">{paper.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{categoryName}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">{paper.questionCount}</TableCell>
-                    <TableCell className="text-center">{paper.duration}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                           <DropdownMenuItem asChild>
-                             <Link href={`/admin/papers/${paper.id}/questions`}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add/Edit Questions
-                              </Link>
+          {loading ? (
+             <div className="flex justify-center items-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead className="text-center">Questions</TableHead>
+                    <TableHead className="text-center">Duration (min)</TableHead>
+                    <TableHead>
+                    <span className="sr-only">Actions</span>
+                    </TableHead>
+                </TableRow>
+                </TableHeader>
+                <TableBody>
+                {papers.map((paper) => {
+                    const categoryPath = getCategoryPath(paper.categoryId, allCategories);
+                    const categoryName = categoryPath?.map(c => c.name).join(' / ') || 'N/A';
+                    return (
+                    <TableRow key={paper.id}>
+                        <TableCell className="font-medium">{paper.title}</TableCell>
+                        <TableCell>
+                        <Badge variant="outline">{categoryName}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center">{paper.questionCount}</TableCell>
+                        <TableCell className="text-center">{paper.duration}</TableCell>
+                        <TableCell className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/admin/papers/${paper.id}/questions`}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add/Edit Questions
+                                </Link>
+                                </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/admin/papers/${paper.id}/edit`}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Details
+                                </Link>
                             </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/papers/${paper.id}/edit`}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Details
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onClick={() => toast({
-                                title: "Paper Deleted (simulation)",
-                                description: `The paper "${paper.title}" will be deleted.`,
-                            })}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => toast({
+                                    title: "Paper Deleted (simulation)",
+                                    description: `The paper "${paper.title}" will be deleted.`,
+                                })}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    )
+                })}
+                </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

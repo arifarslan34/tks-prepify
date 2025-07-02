@@ -1,12 +1,16 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { categories, papers, getCategoryById, getDescendantCategoryIds } from '@/lib/data';
+import { papers } from '@/lib/data';
+import { fetchCategories, getDescendantCategoryIds } from '@/lib/category-service';
 import { ArrowRight, Bookmark, FileText, Folder } from 'lucide-react';
 import Image from 'next/image';
 import { slugify } from '@/lib/utils';
+import { getCategoryById } from '@/lib/category-service';
 
-export default function Home() {
+export default async function Home() {
+  const allCategories = await fetchCategories();
+
   return (
     <>
       {/* Hero Section */}
@@ -48,8 +52,8 @@ export default function Home() {
           <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {categories.slice(0, 4).map((category) => {
-              const paperCount = papers.filter(p => getDescendantCategoryIds(category.id).includes(p.categoryId)).length;
+          {allCategories.slice(0, 4).map((category) => {
+              const paperCount = papers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId)).length;
               const subCategoryCount = category.subcategories?.length || 0;
 
               return (
@@ -110,7 +114,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {papers.slice(0, 3).map((paper) => {
-              const category = getCategoryById(paper.categoryId);
+              const category = getCategoryById(paper.categoryId, allCategories);
               return (
               <Card key={paper.id} className="flex flex-col">
                 <CardContent className="p-6">

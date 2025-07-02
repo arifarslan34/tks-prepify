@@ -1,24 +1,47 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { papers as allPapers, getCategoryById, getCategoryPath, getDescendantCategoryIds } from '@/lib/data';
+import { papers as allPapers } from '@/lib/data';
 import { getIdFromSlug, slugify } from '@/lib/utils';
-import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle } from 'lucide-react';
+import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle, Loader2 } from 'lucide-react';
+import type { Category } from '@/types';
+import { fetchCategories, getCategoryById, getCategoryPath, getDescendantCategoryIds } from '@/lib/category-service';
 
 export default function CategoryPage() {
     const params = useParams();
     const slug = params.slug as string;
     const categoryId = getIdFromSlug(slug);
 
-    const category = getCategoryById(categoryId);
-    const categoryPath = getCategoryPath(categoryId);
+    const [allCategories, setAllCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            const cats = await fetchCategories();
+            setAllCategories(cats);
+            setLoading(false);
+        };
+        loadData();
+    }, []);
+
+    if (loading) {
+        return (
+          <div className="container mx-auto px-16 py-8 md:py-12 text-center flex justify-center items-center min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        );
+    }
     
+    const category = getCategoryById(categoryId, allCategories);
+    const categoryPath = getCategoryPath(categoryId, allCategories);
+
     if (!category) {
         return (
             <div className="container mx-auto px-16 py-8 md:py-12 text-center">
@@ -34,7 +57,7 @@ export default function CategoryPage() {
     const papersInCategory = allPapers.filter(p => p.categoryId === categoryId);
 
     const getPaperCount = (catId: string) => {
-        const descendantIds = getDescendantCategoryIds(catId);
+        const descendantIds = getDescendantCategoryIds(catId, allCategories);
         return allPapers.filter(paper => descendantIds.includes(paper.categoryId)).length;
     }
 

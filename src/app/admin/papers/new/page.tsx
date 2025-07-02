@@ -20,9 +20,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getFlattenedCategories } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from 'react';
+import { fetchCategories, getFlattenedCategories } from '@/lib/category-service';
+import type { Category } from '@/types';
 
 const paperFormSchema = z.object({
   title: z.string().min(3, {
@@ -47,7 +49,21 @@ type PaperFormValues = z.infer<typeof paperFormSchema>;
 export default function NewPaperPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const flatCategories = getFlattenedCategories();
+  
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+        setLoading(true);
+        const cats = await fetchCategories();
+        setAllCategories(cats);
+        setLoading(false);
+    };
+    loadData();
+  }, []);
+  
+  const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
 
   const form = useForm<PaperFormValues>({
     resolver: zodResolver(paperFormSchema),
@@ -60,6 +76,14 @@ export default function NewPaperPage() {
       description: "The new paper has been saved (console only).",
     });
     router.push("/admin/papers");
+  }
+  
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center h-full min-h-[calc(100vh-20rem)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    )
   }
 
   return (

@@ -4,8 +4,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { BarChart, Book, CheckCircle2, Lightbulb, Loader2, XCircle } from 'lucide-react';
-import { papers, questions as allQuestions, getCategoryPath } from '@/lib/data';
-import type { Paper, Question, UserAnswer, TestResult } from '@/types';
+import { papers, questions as allQuestions } from '@/lib/data';
+import { fetchCategories, getCategoryPath } from '@/lib/category-service';
+import type { Paper, Question, UserAnswer, TestResult, Category } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -28,6 +29,18 @@ export default function ResultsPage() {
   const [result, setResult] = useState<TestResult | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>({});
   const [recommendations, setRecommendations] = useState({ loading: false, content: '' });
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+        setLoadingCategories(true);
+        const cats = await fetchCategories();
+        setAllCategories(cats);
+        setLoadingCategories(false);
+    }
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     const storedResults = localStorage.getItem('latestTestResults');
@@ -68,10 +81,10 @@ export default function ResultsPage() {
   }, [params.testId, router]);
 
   const handleGetFeedback = async (question: Question, userAnswer: string) => {
-    if (!result) return;
+    if (!result || loadingCategories) return;
     setFeedback(prev => ({ ...prev, [question.id]: { loading: true } }));
 
-    const path = getCategoryPath(result.paper.categoryId);
+    const path = getCategoryPath(result.paper.categoryId, allCategories);
     const categoryName = path?.[0]?.name || 'General';
     const subCategoryName = path && path.length > 0 ? path[path.length - 1].name : 'General';
     const correctAnswerText = Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer;
@@ -187,7 +200,7 @@ export default function ResultsPage() {
                           {question.explanation && <p className="text-muted-foreground"><span className="font-semibold">Explanation:</span> {question.explanation}</p>}
                           {!answer.isCorrect && (
                             <div className="p-4 bg-secondary/50 rounded-lg">
-                              <Button size="sm" onClick={() => handleGetFeedback(question, answer.selectedOption)} disabled={questionFeedback?.loading}>
+                              <Button size="sm" onClick={() => handleGetFeedback(question, answer.selectedOption)} disabled={questionFeedback?.loading || loadingCategories}>
                                 {questionFeedback?.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
                                 Get AI Feedback
                               </Button>

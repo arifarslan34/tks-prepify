@@ -17,14 +17,16 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
-import { papers, getFlattenedCategories, getDescendantCategoryIds } from "@/lib/data";
+import { papers } from "@/lib/data";
+import { fetchCategories, getFlattenedCategories, getDescendantCategoryIds } from "@/lib/category-service";
 import Link from "next/link";
 
-export default function AdminCategoriesPage() {
-  const flatCategories = getFlattenedCategories();
+export default async function AdminCategoriesPage() {
+  const allCategories = await fetchCategories();
+  const flatCategories = getFlattenedCategories(allCategories);
 
   const getPaperCount = (categoryId: string) => {
-    const descendantIds = getDescendantCategoryIds(categoryId);
+    const descendantIds = getDescendantCategoryIds(categoryId, allCategories);
     return papers.filter(paper => descendantIds.includes(paper.categoryId)).length;
   }
 

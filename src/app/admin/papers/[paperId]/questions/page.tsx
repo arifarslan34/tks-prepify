@@ -22,7 +22,8 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { getPaperById, questions as allQuestions } from "@/lib/data";
+import { questions as allQuestions } from "@/lib/data";
+import { getPaperById } from "@/lib/category-service";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 

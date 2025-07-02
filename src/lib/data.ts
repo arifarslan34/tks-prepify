@@ -1,112 +1,5 @@
 
-import type { Category, Paper, Question, User } from '@/types';
-import { Atom, Calculator, Briefcase, Languages } from 'lucide-react';
-
-// Recursive function to find a category by its ID
-function findCategory(categories: Category[], id: string): Category | undefined {
-  for (const category of categories) {
-    if (category.id === id) return category;
-    if (category.subcategories) {
-      const found = findCategory(category.subcategories, id);
-      if (found) return found;
-    }
-  }
-  return undefined;
-}
-
-// Helper to get a category by ID from the main categories export
-export function getCategoryById(id: string): Category | undefined {
-  return findCategory(categories, id);
-}
-
-// Helper to get a paper by ID
-export function getPaperById(id: string): Paper | undefined {
-  return papers.find(paper => paper.id === id);
-}
-
-// Helper to get a question by ID
-export function getQuestionById(id:string): Question | undefined {
-    return questions.find(q => q.id === id);
-}
-
-
-// Helper to get all descendant category IDs including the parent
-export function getDescendantCategoryIds(startId: string): string[] {
-  const ids: string[] = [];
-  const startCategory = findCategory(categories, startId);
-  if (!startCategory) return [];
-
-  const queue: Category[] = [startCategory];
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    ids.push(current.id);
-    if (current.subcategories) {
-      queue.push(...current.subcategories);
-    }
-  }
-  return ids;
-}
-
-// Helper to get a flattened list of categories for UI elements like select dropdowns
-export function getFlattenedCategories(cats: Category[] = categories): { id:string; name: string; level: number; isParent: boolean }[] {
-  const flat: { id: string; name: string; level: number; isParent: boolean }[] = [];
-  function recurse(categories: Category[], level: number) {
-    for (const category of categories) {
-      const hasSubcategories = !!category.subcategories && category.subcategories.length > 0;
-      flat.push({ id: category.id, name: category.name, level, isParent: hasSubcategories });
-      if (hasSubcategories) {
-        recurse(category.subcategories, level + 1);
-      }
-    }
-  }
-  recurse(cats, 0);
-  return flat;
-}
-
-// Helper to get the path (breadcrumbs) for a given category ID
-export function getCategoryPath(id: string): Category[] | null {
-  function findPath(cats: Category[], id: string, path: Category[]): Category[] | null {
-    for (const category of cats) {
-      const newPath = [...path, { ...category, subcategories: undefined }];
-      if (category.id === id) return newPath;
-      if (category.subcategories) {
-        const found = findPath(category.subcategories, id, newPath);
-        if (found) return found;
-      }
-    }
-    return null;
-  }
-  return findPath(categories, id, []);
-}
-
-
-export const categories: Category[] = [
-  { 
-    id: 'cat1', name: 'Science', description: 'Explore the wonders of science.', icon: Atom,
-    subcategories: [
-      { id: 'cat1_1', name: 'Physics' },
-      { id: 'cat1_2', name: 'Chemistry' },
-    ]
-  },
-  { 
-    id: 'cat2', name: 'Mathematics', description: 'Challenge your numerical skills.', icon: Calculator,
-    subcategories: [
-      { id: 'cat2_1', name: 'Algebra' },
-      { id: 'cat2_2', name: 'Calculus' },
-    ]
-  },
-  { id: 'cat3', name: 'Business Studies', description: 'Learn the fundamentals of business.', icon: Briefcase,
-    subcategories: [
-      { id: 'cat3_1', name: 'Marketing' }
-    ]
-  },
-  { id: 'cat4', name: 'Language Arts', description: 'Master the art of communication.', icon: Languages,
-    subcategories: [
-      { id: 'cat4_1', name: 'English' },
-      { id: 'cat4_2', name: 'Literature' }
-    ]
-  },
-];
+import type { Paper, Question, User } from '@/types';
 
 export const papers: Paper[] = [
   { id: 'paper1', title: 'Physics Fundamentals', description: 'Test your knowledge on basic physics principles.', categoryId: 'cat1_1', questionCount: 5, duration: 10, year: 2023, featured: true },
@@ -182,3 +75,7 @@ export const users: User[] = [
   { id: 'user-2', name: 'John Doe', email: 'john.doe@example.com', role: 'User', createdAt: '2023-10-15' },
   { id: 'user-3', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'User', createdAt: '2023-11-05' },
 ];
+
+export function getQuestionById(id:string): Question | undefined {
+    return questions.find(q => q.id === id);
+}

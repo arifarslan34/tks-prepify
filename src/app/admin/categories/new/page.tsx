@@ -20,10 +20,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getFlattenedCategories } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
-import React from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { fetchCategories, getFlattenedCategories } from "@/lib/category-service";
+import type { Category } from "@/types";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -44,8 +45,22 @@ function NewCategoryPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const flatCategories = getFlattenedCategories();
   
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+        setLoading(true);
+        const cats = await fetchCategories();
+        setAllCategories(cats);
+        setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
+
   const parentId = searchParams.get("parentId") || undefined;
   
   const form = useForm<CategoryFormValues>({
@@ -64,6 +79,14 @@ function NewCategoryPageComponent() {
       description: "The new category has been saved (console only).",
     });
     router.push("/admin/categories");
+  }
+
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center h-full min-h-[calc(100vh-20rem)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    )
   }
 
   return (
@@ -153,7 +176,11 @@ function NewCategoryPageComponent() {
 
 export default function NewCategoryPage() {
     return (
-        <React.Suspense fallback={<div>Loading...</div>}>
+        <React.Suspense fallback={
+            <div className="flex justify-center items-center h-full min-h-[calc(100vh-20rem)]">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
             <NewCategoryPageComponent />
         </React.Suspense>
     )

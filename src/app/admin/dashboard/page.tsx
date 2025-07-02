@@ -5,23 +5,49 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Users, Folder, PlusCircle, ArrowUpRight, HelpCircle } from 'lucide-react';
-import { papers, categories, getFlattenedCategories, getCategoryById, questions as allQuestions, users } from '@/lib/data';
+import { FileText, Users, Folder, PlusCircle, ArrowUpRight, HelpCircle, Loader2 } from 'lucide-react';
+import { papers, questions as allQuestions, users, getPaperById } from '@/lib/data';
+import { fetchCategories, getCategoryById, getFlattenedCategories } from '@/lib/category-service';
+import type { Category } from '@/types';
 import Link from 'next/link';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { useState, useEffect, useMemo } from 'react';
 
 export default function AdminDashboardPage() {
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+        setLoading(true);
+        const cats = await fetchCategories();
+        setAllCategories(cats);
+        setLoading(false);
+    };
+    loadData();
+  }, []);
+
   const totalPapers = papers.length;
-  const totalCategories = getFlattenedCategories().length;
+  const totalCategories = useMemo(() => getFlattenedCategories(allCategories).length, [allCategories]);
   const totalQuestions = allQuestions.length;
   const totalUsers = users.length;
 
-  const papersPerCategory = categories.map(category => ({
-    name: category.name,
-    total: papers.filter(paper => paper.categoryId.startsWith(category.id)).length,
-  }));
+  const papersPerCategory = useMemo(() => allCategories
+    .filter(c => !c.parentId) // only top level
+    .map(category => ({
+      name: category.name,
+      total: papers.filter(paper => paper.categoryId.startsWith(category.id)).length,
+  })), [allCategories]);
 
   const recentPapers = papers.slice(-5).reverse();
+  
+  if (loading) {
+      return (
+          <div className="flex justify-center items-center h-full min-h-[calc(100vh-20rem)]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+      )
+  }
 
   return (
     <div className="space-y-6">
@@ -130,7 +156,7 @@ export default function AdminDashboardPage() {
                         </TableHeader>
                         <TableBody>
                             {recentPapers.map((paper) => {
-                                const category = getCategoryById(paper.categoryId);
+                                const category = getCategoryById(paper.categoryId, allCategories);
                                 return (
                                 <TableRow key={paper.id}>
                                     <TableCell>

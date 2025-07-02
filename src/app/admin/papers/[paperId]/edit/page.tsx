@@ -19,10 +19,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getFlattenedCategories, getPaperById } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { fetchCategories, getFlattenedCategories, getPaperById } from "@/lib/category-service";
+import type { Category } from "@/types";
 
 const paperFormSchema = z.object({
   title: z.string().min(3, {
@@ -49,9 +50,23 @@ export default function EditPaperPage() {
   const params = useParams();
   const { toast } = useToast();
   
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+        setLoading(true);
+        const cats = await fetchCategories();
+        setAllCategories(cats);
+        setLoading(false);
+    };
+    loadData();
+  }, []);
+  
+  const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
+
   const paperId = params.paperId as string;
   const paper = getPaperById(paperId);
-  const flatCategories = getFlattenedCategories();
 
   const form = useForm<PaperFormValues>({
     resolver: zodResolver(paperFormSchema),
@@ -73,10 +88,10 @@ export default function EditPaperPage() {
       }
   }, [paper, form]);
 
-  if (!paper) {
+  if (loading || !paper) {
     return (
-        <div className="flex justify-center items-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex justify-center items-center h-full min-h-[calc(100vh-20rem)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
     );
   }
