@@ -37,8 +37,9 @@ import { papers } from "@/lib/data";
 import { fetchCategories, getFlattenedCategories, getDescendantCategoryIds, clearCategoriesCache, getCategoryById } from "@/lib/category-service";
 import type { Category } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { doc, deleteDoc } from "firebase/firestore";
+import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Switch } from "@/components/ui/switch";
 
 type FlatCategory = ReturnType<typeof getFlattenedCategories>[0] & { raw: Category };
 
@@ -48,6 +49,7 @@ export default function AdminCategoriesPage() {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState<{ [key: string]: boolean }>({});
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<FlatCategory | null>(null);
 
@@ -79,6 +81,48 @@ export default function AdminCategoriesPage() {
     setCategoryToDelete(category);
     setDeleteAlertOpen(true);
   }
+
+  const handleFeatureToggle = async (categoryId: string, featured: boolean) => {
+    setIsUpdating(prev => ({ ...prev, [categoryId]: true }));
+    try {
+      const categoryRef = doc(db, "categories", categoryId);
+      await updateDoc(categoryRef, { featured });
+      
+      toast({
+        title: "Category Updated",
+        description: `Featured status has been updated.`,
+      });
+      
+      // Optimistic UI update
+      setAllCategories(prev => {
+        const updateInTree = (categories: Category[], id: string, feat: boolean): Category[] => {
+            return categories.map(cat => {
+                if (cat.id === id) {
+                    return { ...cat, featured: feat };
+                }
+                if (cat.subcategories && cat.subcategories.length > 0) {
+                    return { ...cat, subcategories: updateInTree(cat.subcategories, id, feat) };
+                }
+                return cat;
+            });
+        };
+        return updateInTree(prev, categoryId, featured);
+      });
+
+      clearCategoriesCache();
+      router.refresh();
+
+    } catch (error) {
+      console.error("Failed to update category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update category. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(prev => ({ ...prev, [categoryId]: false }));
+    }
+  };
 
   const handleDeleteCategory = async () => {
     if (!categoryToDelete) return;
@@ -161,8 +205,9 @@ export default function AdminCategoriesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[60%]">Name</TableHead>
+                  <TableHead className="w-[50%]">Name</TableHead>
                   <TableHead>Papers</TableHead>
+                  <TableHead>Featured</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -180,10 +225,18 @@ export default function AdminCategoriesPage() {
                     <TableCell>
                       {getPaperCount(category.id)}
                     </TableCell>
+                     <TableCell>
+                        <Switch
+                            checked={category.raw.featured || false}
+                            onCheckedChange={(newStatus) => handleFeatureToggle(category.id, newStatus)}
+                            disabled={isUpdating[category.id] || isDeleting}
+                            aria-label="Toggle featured status"
+                        />
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isUpdating[category.id]}>
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">Toggle menu</span>
                           </Button>
