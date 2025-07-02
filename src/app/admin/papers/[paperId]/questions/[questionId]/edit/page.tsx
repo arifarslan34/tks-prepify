@@ -183,7 +183,7 @@ export default function EditQuestionPage() {
 
                   <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-4 gap-y-2">
                     {/* Grid Header */}
-                    <Label className="text-sm font-medium text-muted-foreground justify-self-center">Is/Are correct option(s)</Label>
+                    <Label className="text-sm font-medium text-muted-foreground justify-self-center">Correct Option(s)</Label>
                     <Label className="text-sm font-medium text-muted-foreground">Option Text</Label>
                     <span />
 
