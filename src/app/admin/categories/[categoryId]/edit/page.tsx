@@ -29,6 +29,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { slugify } from "@/lib/utils";
 import { generateSeoDetails } from "@/ai/flows/generate-seo-flow";
+import { generateDescription } from "@/ai/flows/generate-description-flow";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -57,6 +58,7 @@ export default function EditCategoryPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
@@ -150,6 +152,36 @@ export default function EditCategoryPage() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleGenerateDescription() {
+    const categoryName = form.getValues("name");
+    if (!categoryName) {
+      toast({
+        title: "Category Name required",
+        description: "Please fill in the category name before generating a description.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsGeneratingDescription(true);
+    try {
+      const result = await generateDescription({ name: categoryName });
+      form.setValue("description", result.description, { shouldValidate: true });
+      toast({
+        title: "Description Generated",
+        description: "AI has created a description for you.",
+      });
+    } catch (error) {
+      console.error("Error generating description:", error);
+      toast({
+        title: "Generation Failed",
+        description: "Could not generate a description at this time. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingDescription(false);
     }
   }
 
@@ -252,7 +284,20 @@ export default function EditCategoryPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Description</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={handleGenerateDescription}
+                        disabled={isGeneratingDescription || isSubmitting}
+                      >
+                        {isGeneratingDescription ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                        Generate
+                      </Button>
+                    </div>
                     <FormControl>
                       <Textarea {...field} disabled={isSubmitting} />
                     </FormControl>
