@@ -34,7 +34,7 @@ export default function PapersPage() {
   });
 
   return (
-    <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-8 md:py-12">
+    <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-8 md:py-12">
       <div className="mb-8">
         <h1 className="text-4xl font-bold font-headline mb-2">Question Papers</h1>
         <p className="text-lg text-muted-foreground">Browse our extensive collection of papers to prepare for your exams.</p>

@@ -118,7 +118,7 @@ export default function AdminLayout({
               </DropdownMenu>
             </div>
           </header>
-          <div className="p-6 md:p-10 bg-muted/40 min-h-[calc(100vh-4rem)]">
+          <div className="p-8 md:p-12 bg-muted/40 min-h-[calc(100vh-4rem)]">
             {children}
           </div>
         </SidebarInset>
