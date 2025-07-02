@@ -4,13 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { categories, papers, getCategoryById, getDescendantCategoryIds } from '@/lib/data';
 import { ArrowRight, Bookmark, FileText, Folder } from 'lucide-react';
 import Image from 'next/image';
+import { slugify } from '@/lib/utils';
 
 export default function Home() {
   return (
     <>
       {/* Hero Section */}
       <section className="bg-card">
-        <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
+        <div className="container mx-auto px-16 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold font-headline leading-tight">
               Excel in Your Tests with <span className="text-primary">Expertly Solved</span> Question Papers
@@ -41,7 +42,7 @@ export default function Home() {
       </section>
 
       {/* Categories Section */}
-      <section id="categories" className="container mx-auto px-6 sm:px-10 lg:px-16 py-16 md:py-24">
+      <section id="categories" className="container mx-auto px-16 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore by Category</h2>
           <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
@@ -52,7 +53,7 @@ export default function Home() {
               const subCategoryCount = category.subcategories?.length || 0;
 
               return (
-                <Link key={category.id} href={`/papers?category=${category.id}`} className="group">
+                <Link key={category.id} href={`/categories/${category.id}-${slugify(category.name)}`} className="group">
                   <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 h-full hover:border-primary">
                     <CardContent className="p-6 flex flex-col h-full">
                       <div className="flex justify-between items-start mb-4">
@@ -97,7 +98,7 @@ export default function Home() {
 
       {/* Latest Papers Section */}
       <section className="bg-card">
-        <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-16 md:py-24">
+        <div className="container mx-auto px-16 py-16 md:py-24">
           <div className="flex justify-between items-center mb-12">
             <div className="text-left">
               <h2 className="text-3xl md:text-4xl font-bold font-headline">Latest Question Papers</h2>
@@ -127,7 +128,7 @@ export default function Home() {
                 </CardContent>
                 <div className="px-6 pb-6">
                   <Button className="w-full" asChild>
-                    <Link href={`/test/${paper.id}`}>View Paper</Link>
+                    <Link href={`/papers/${paper.id}-${slugify(paper.title)}`}>View Paper</Link>
                   </Button>
                 </div>
               </Card>

@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { categories, papers, getDescendantCategoryIds } from '@/lib/data';
 import { ArrowRight, Folder, FileText } from 'lucide-react';
+import { slugify } from '@/lib/utils';
 
 export default function CategoriesPage() {
   return (
-    <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-16 md:py-24">
+    <div className="container mx-auto px-16 py-16 md:py-24">
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-bold font-headline">Browse All Categories</h1>
         <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
@@ -16,7 +17,7 @@ export default function CategoriesPage() {
           const subCategoryCount = category.subcategories?.length || 0;
 
           return (
-            <Link key={category.id} href={`/papers?category=${category.id}`} className="group">
+            <Link key={category.id} href={`/categories/${category.id}-${slugify(category.name)}`} className="group">
               <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 h-full hover:border-primary">
                 <CardContent className="p-6 flex flex-col h-full">
                   <div className="flex justify-between items-start mb-4">

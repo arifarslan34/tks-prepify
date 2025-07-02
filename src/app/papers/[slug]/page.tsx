@@ -11,13 +11,10 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { getIdFromSlug } from '@/lib/utils';
 
-// THIS FILE IS DEPRECATED AND WILL BE REPLACED BY /app/papers/[slug]/page.tsx
-// It is kept to avoid breaking changes if the file system cannot be modified.
-
 export default function SolvedPaperPage() {
   const router = useRouter();
   const params = useParams();
-  const slug = params.paperId as string; // Use paperId as slug
+  const slug = params.slug as string;
   const paperId = getIdFromSlug(slug);
 
   const paper = papers.find(p => p.id === paperId);
