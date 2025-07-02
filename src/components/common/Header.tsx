@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Globe, Search, User, Menu } from "lucide-react";
+import { BookOpen, Globe, Search, User, Menu, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -86,6 +86,13 @@ export function Header() {
               <DropdownMenuItem disabled>Profile</DropdownMenuItem>
               <DropdownMenuItem disabled>My Results</DropdownMenuItem>
               <DropdownMenuItem disabled>Saved Papers</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/admin/dashboard">
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Admin
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled>Logout</DropdownMenuItem>
             </DropdownMenuContent>
