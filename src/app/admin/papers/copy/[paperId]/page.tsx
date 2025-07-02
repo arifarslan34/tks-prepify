@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { fetchCategories, getFlattenedCategories, getCategoryPath, getCategoryById } from "@/lib/category-service";
 import { getPaperById } from "@/lib/paper-service";
 import type { Category, Paper } from "@/types";
@@ -59,6 +59,20 @@ const paperFormSchema = z.object({
 });
 
 type PaperFormValues = z.infer<typeof paperFormSchema>;
+
+// Helper function moved outside the component
+const getNewSlug = (paperData: PaperFormValues, allCategories: Category[]): string => {
+    if (paperData.slug && slugify(paperData.slug)) {
+        return slugify(paperData.slug);
+    }
+    const category = getCategoryById(paperData.categoryId, allCategories);
+    const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
+    const sessionForSlug = paperData.session === 'none' ? '' : paperData.session || '';
+    const titleSlug = slugify(`${paperData.title} ${paperData.year || ''} ${sessionForSlug}`.trim());
+
+    return categorySlug ? `${categorySlug}-${titleSlug}` : titleSlug;
+};
+
 
 export default function CopyPaperPage() {
   const router = useRouter();
@@ -114,105 +128,61 @@ export default function CopyPaperPage() {
 
   const flatCategories = useMemo(() => getFlattenedCategories(allCategories), [allCategories]);
   
-  async function handleGenerateDescription() {
-    const title = form.getValues("title");
-    const categoryId = form.getValues("categoryId");
-    const rawYear = form.getValues("year");
+  const handleAiGeneration = useCallback(async (type: 'desc' | 'seo') => {
+    const values = form.getValues();
+    const { title, categoryId, description: desc } = values;
+
     const sessionValue = form.getValues("session");
     const session = sessionValue === 'none' ? undefined : sessionValue;
 
-    let year: number | undefined = undefined;
-    if (rawYear && String(rawYear).trim()) {
-        const parsed = parseInt(String(rawYear), 10);
-        if (!isNaN(parsed)) {
-            year = parsed;
-        }
-    }
-
+    const yearResult = z.coerce.number().int().optional().safeParse(values.year);
+    const year = yearResult.success ? yearResult.data : undefined;
+    
     if (!title || !categoryId) {
-        toast({ title: "Title & Category Required", description: "Please enter a title and select a category to generate a description.", variant: "destructive" });
+        toast({ title: "Title & Category Required", description: "Please enter a title and select a category.", variant: "destructive" });
         return;
     }
+    if (type === 'seo' && !desc) {
+        toast({ title: "Description Required", description: "Please provide a description to generate SEO content.", variant: "destructive" });
+        return;
+    }
+
     const categoryPath = getCategoryPath(categoryId, allCategories);
     const categoryName = categoryPath?.map(c => c.name).join(' / ') || '';
+    const setLoadingState = type === 'desc' ? setIsGeneratingDesc : setIsGeneratingSeo;
 
-    setIsGeneratingDesc(true);
+    setLoadingState(true);
     try {
-        const result = await generatePaperDescription({ title, categoryName, year, session });
-        form.setValue("description", result.description, { shouldValidate: true });
-        toast({ title: "Description Generated", description: "AI has created a description for you." });
-    } catch (error) {
-        console.error("Error generating description:", error);
-        toast({ title: "Generation Failed", description: "Could not generate a description.", variant: "destructive" });
-    } finally {
-        setIsGeneratingDesc(false);
-    }
-  }
-  
-  async function handleGenerateSeo() {
-    const title = form.getValues("title");
-    const description = form.getValues("description");
-    const categoryId = form.getValues("categoryId");
-    const rawYear = form.getValues("year");
-    const sessionValue = form.getValues("session");
-    const session = sessionValue === 'none' ? undefined : sessionValue;
-
-    let year: number | undefined = undefined;
-    if (rawYear && String(rawYear).trim()) {
-        const parsed = parseInt(String(rawYear), 10);
-        if (!isNaN(parsed)) {
-            year = parsed;
+        if (type === 'desc') {
+            const result = await generatePaperDescription({ title, categoryName, year, session });
+            form.setValue("description", result.description, { shouldValidate: true });
+            toast({ title: "Description Generated", description: "AI has created a description for you." });
+        } else if (type === 'seo' && desc) {
+            const result = await generatePaperSeoDetails({ title, description: desc, categoryName, year, session });
+            form.setValue("keywords", result.keywords, { shouldValidate: true });
+            form.setValue("metaTitle", result.metaTitle, { shouldValidate: true });
+            form.setValue("metaDescription", result.metaDescription, { shouldValidate: true });
+            toast({ title: "SEO Details Generated", description: "AI has filled in the SEO fields for you." });
         }
-    }
-
-    if (!title || !description || !categoryId) {
-        toast({ title: "Title, Description & Category Required", description: "Please provide all details to generate SEO content.", variant: "destructive" });
-        return;
-    }
-    const categoryPath = getCategoryPath(categoryId, allCategories);
-    const categoryName = categoryPath?.map(c => c.name).join(' / ') || '';
-
-    setIsGeneratingSeo(true);
-    try {
-        const result = await generatePaperSeoDetails({ title, description, categoryName, year, session });
-        form.setValue("keywords", result.keywords, { shouldValidate: true });
-        form.setValue("metaTitle", result.metaTitle, { shouldValidate: true });
-        form.setValue("metaDescription", result.metaDescription, { shouldValidate: true });
-        toast({ title: "SEO Details Generated", description: "AI has filled in the SEO fields for you." });
     } catch (error) {
-        console.error("Error generating SEO details:", error);
-        toast({ title: "Generation Failed", description: "Could not generate SEO details.", variant: "destructive" });
+        console.error(`Error generating ${type}:`, error);
+        toast({ title: "Generation Failed", description: `Could not generate ${type}.`, variant: "destructive" });
     } finally {
-        setIsGeneratingSeo(false);
+        setLoadingState(false);
     }
-  }
+  }, [form, allCategories, toast]);
 
-  const getSlug = (data: PaperFormValues) => {
-    if (data.slug) {
-        return slugify(data.slug);
-    }
-    const category = getCategoryById(data.categoryId, allCategories);
-    const categorySlug = category ? category.slug.replace(/\//g, '-') : '';
-    const sessionForSlug = data.session === 'none' ? '' : data.session || '';
-    const titleSlug = slugify(`${data.title} ${data.year || ''} ${sessionForSlug}`.trim());
-
-    if (categorySlug) {
-        return `${categorySlug}-${titleSlug}`;
-    }
-    return titleSlug;
-  };
-
-  async function onSubmit(data: PaperFormValues) {
+  const onSubmit = useCallback(async (data: PaperFormValues) => {
     setIsSubmitting(true);
     try {
-      const paperData = {
+      const newPaperData = {
           ...data,
-          slug: getSlug(data),
+          slug: getNewSlug(data, allCategories),
           published: data.published || false,
           session: data.session === 'none' || !data.session ? null : data.session,
       };
       
-      await addDoc(collection(db, "papers"), paperData);
+      await addDoc(collection(db, "papers"), newPaperData);
 
       toast({
         title: "Paper Copied",
@@ -226,7 +196,7 @@ export default function CopyPaperPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }
+  }, [allCategories, router, toast]);
 
   if (loading) {
     return (
@@ -286,7 +256,7 @@ export default function CopyPaperPage() {
                         <FormItem>
                             <div className="flex items-center justify-between">
                                 <FormLabel>Description</FormLabel>
-                                <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={handleGenerateDescription} disabled={isGeneratingDesc || isSubmitting}>
+                                <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={() => handleAiGeneration('desc')} disabled={isGeneratingDesc || isSubmitting}>
                                     {isGeneratingDesc ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
                                 </Button>
                             </div>
@@ -430,7 +400,7 @@ export default function CopyPaperPage() {
                             <CardTitle>SEO Details</CardTitle>
                             <CardDescription>Optimize this paper for search engines.</CardDescription>
                         </div>
-                        <Button type="button" variant="outline" size="sm" onClick={handleGenerateSeo} disabled={isGeneratingSeo || isSubmitting}>
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleAiGeneration('seo')} disabled={isGeneratingSeo || isSubmitting}>
                             {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                             Generate with AI
                         </Button>
