@@ -14,7 +14,7 @@ export default function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-        <Sidebar collapsible="icon">
+        <Sidebar collapsible="icon" variant="inset">
           <SidebarHeader>
             <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
               <BookOpen className="h-6 w-6 text-primary" />

@@ -123,7 +123,7 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline">Test Results: {result.paper.title}</CardTitle>
