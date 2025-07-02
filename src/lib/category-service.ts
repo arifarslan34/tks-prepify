@@ -20,11 +20,9 @@ const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = 
   Languages,
 };
 
-type FirestoreCategory = Omit<Category, 'icon' | 'subcategories' | 'slug'> & {
+type FirestoreCategory = Omit<Category, 'icon' | 'subcategories'> & {
     icon?: string;
     parentId?: string | null;
-    featured?: boolean;
-    slug?: string;
 }
 
 /**
@@ -39,12 +37,15 @@ export async function fetchCategories(): Promise<Category[]> {
     return {
       id: doc.id,
       name: data.name,
-      // We only use the slugified name for the local part of the slug.
-      slug: slugify(data.name),
+      // Fallback to slugifying the name for any old data that might not have a slug field.
+      slug: data.slug || slugify(data.name),
       description: data.description,
       icon: data.icon ? iconMap[data.icon] : undefined,
       parentId: data.parentId || null,
       featured: data.featured || false,
+      keywords: data.keywords,
+      metaTitle: data.metaTitle,
+      metaDescription: data.metaDescription,
     };
   });
 

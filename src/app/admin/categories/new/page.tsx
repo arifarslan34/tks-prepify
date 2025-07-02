@@ -24,7 +24,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import React, { useState, useEffect, useMemo } from "react";
 import { fetchCategories, getFlattenedCategories, clearCategoriesCache } from "@/lib/category-service";
 import type { Category } from "@/types";
-import { addDoc, collection, doc, getDoc } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Switch } from "@/components/ui/switch";
 import { slugify } from "@/lib/utils";
@@ -33,11 +33,15 @@ const categoryFormSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
+  slug: z.string().optional(),
   description: z.string().min(10, {
     message: "Description must be at least 10 characters.",
   }),
   parentId: z.string().optional(),
   featured: z.boolean().default(false).optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  keywords: z.string().optional(),
 });
 
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
@@ -72,9 +76,13 @@ function NewCategoryPageComponent() {
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: "",
+      slug: "",
       description: "",
       parentId: parentIdParam === "none" ? undefined : parentIdParam,
       featured: false,
+      metaTitle: "",
+      metaDescription: "",
+      keywords: "",
     },
   });
 
@@ -82,23 +90,17 @@ function NewCategoryPageComponent() {
     setIsSubmitting(true);
     try {
       const parentId = data.parentId === 'none' || !data.parentId ? null : data.parentId;
-      let fullSlug = slugify(data.name);
-
-      if (parentId) {
-        const parentRef = doc(db, "categories", parentId);
-        const parentSnap = await getDoc(parentRef);
-        if (parentSnap.exists()) {
-          const parentSlug = parentSnap.data().slug || '';
-          fullSlug = `${parentSlug}/${slugify(data.name)}`;
-        }
-      }
+      const localSlug = slugify(data.slug || data.name);
 
       const categoryData = {
         name: data.name,
+        slug: localSlug,
         description: data.description,
         parentId: parentId,
         featured: data.featured || false,
-        slug: fullSlug,
+        metaTitle: data.metaTitle || '',
+        metaDescription: data.metaDescription || '',
+        keywords: data.keywords || '',
       };
 
 
@@ -158,6 +160,20 @@ function NewCategoryPageComponent() {
                       <Input placeholder="e.g., Quantum Mechanics" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormDescription>This is the public name for the category.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL Slug (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., quantum-mechanics" {...field} disabled={isSubmitting} />
+                    </FormControl>
+                    <FormDescription>If left blank, the slug will be generated from the name.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -226,6 +242,57 @@ function NewCategoryPageComponent() {
                   </FormItem>
                 )}
               />
+
+              <Card>
+                <CardHeader>
+                    <CardTitle>SEO Details</CardTitle>
+                    <CardDescription>Optimize this category for search engines.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="metaTitle"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Title (Optional)</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Top Quantum Mechanics Papers" {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormDescription>The title that appears in browser tabs and search results.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="metaDescription"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Description (Optional)</FormLabel>
+                            <FormControl>
+                            <Textarea placeholder="A concise summary for search engine results..." {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="keywords"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Keywords (Optional)</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., physics, quantum, exams" {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormDescription>Comma-separated keywords for search engines.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </CardContent>
+              </Card>
+
               <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" onClick={() => router.push('/admin/categories')} disabled={isSubmitting}>
                   Cancel

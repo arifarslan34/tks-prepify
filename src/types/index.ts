@@ -7,6 +7,9 @@ export interface Category {
   icon?: React.ComponentType<{ className?: string }>;
   subcategories?: Category[];
   featured?: boolean;
+  keywords?: string;
+  metaTitle?: string;
+  metaDescription?: string;
 }
 
 export interface Paper {

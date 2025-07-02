@@ -1,6 +1,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,24 @@ import { papers as allPapers } from '@/lib/data';
 import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle } from 'lucide-react';
 import type { Category } from '@/types';
 import { fetchCategories, getCategoryBySlug, getCategoryPath, getDescendantCategoryIds } from '@/lib/category-service';
+
+export async function generateMetadata({ params }: { params: { slug: string[] } }): Promise<Metadata> {
+  const fullSlug = params.slug.join('/');
+  const allCategories = await fetchCategories();
+  const category = getCategoryBySlug(fullSlug, allCategories);
+
+  if (!category) {
+    return {
+      title: 'Category Not Found',
+    };
+  }
+
+  return {
+    title: category.metaTitle || category.name,
+    description: category.metaDescription || category.description,
+    keywords: category.keywords,
+  };
+}
 
 export default async function CategoryPage({ params }: { params: { slug: string[] } }) {
     const fullSlug = params.slug.join('/');

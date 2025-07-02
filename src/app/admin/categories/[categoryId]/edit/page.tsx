@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { fetchCategories, getFlattenedCategories, clearCategoriesCache, getDescendantCategoryIds } from "@/lib/category-service";
 import type { Category } from "@/types";
-import { doc, getDoc, updateDoc, writeBatch, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { slugify } from "@/lib/utils";
 
@@ -33,11 +33,15 @@ const categoryFormSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
+  slug: z.string().optional(),
   description: z.string().min(10, {
     message: "Description must be at least 10 characters.",
   }),
   parentId: z.string().optional(),
   featured: z.boolean().default(false).optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  keywords: z.string().optional(),
 });
 
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
@@ -56,8 +60,12 @@ export default function EditCategoryPage() {
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: "",
+      slug: "",
       description: "",
       featured: false,
+      metaTitle: "",
+      metaDescription: "",
+      keywords: "",
     },
   });
 
@@ -77,9 +85,13 @@ export default function EditCategoryPage() {
                 const categoryData = categoryDoc.data();
                 form.reset({
                     name: categoryData.name,
+                    slug: categoryData.slug,
                     description: categoryData.description,
                     parentId: categoryData.parentId || undefined,
                     featured: categoryData.featured || false,
+                    metaTitle: categoryData.metaTitle || '',
+                    metaDescription: categoryData.metaDescription || '',
+                    keywords: categoryData.keywords || '',
                 });
             } else {
                 toast({ title: "Error", description: "Category not found.", variant: "destructive" });
@@ -102,64 +114,22 @@ export default function EditCategoryPage() {
     setIsSubmitting(true);
     try {
       const categoryRef = doc(db, "categories", categoryId);
-      const oldCategorySnap = await getDoc(categoryRef);
-      const oldSlug = oldCategorySnap.data()?.slug;
-
+      
       const newParentId = data.parentId === 'none' || !data.parentId ? null : data.parentId;
-      let newSlug = slugify(data.name);
-
-      if (newParentId) {
-        const parentRef = doc(db, 'categories', newParentId);
-        const parentSnap = await getDoc(parentRef);
-        if (parentSnap.exists()) {
-          newSlug = `${parentSnap.data().slug}/${slugify(data.name)}`;
-        }
-      }
+      const localSlug = slugify(data.slug || data.name);
 
       const updatedData = {
         name: data.name,
+        slug: localSlug,
         description: data.description,
         parentId: newParentId,
         featured: data.featured || false,
-        slug: newSlug,
+        metaTitle: data.metaTitle || '',
+        metaDescription: data.metaDescription || '',
+        keywords: data.keywords || '',
       };
-
-      if (oldSlug === newSlug) {
-        // If slug hasn't changed, only name/description/featured might have.
-        // A simple update is enough.
-        await updateDoc(categoryRef, {
-            name: data.name,
-            description: data.description,
-            parentId: newParentId,
-            featured: data.featured,
-        });
-      } else {
-        // If slug has changed, we need a batch write to update all descendants.
-        const batch = writeBatch(db);
-        batch.update(categoryRef, updatedData);
-
-        // Recursive function to update slugs of all descendants
-        const updateDescendants = async (currentParentId: string, currentParentSlug: string) => {
-          const q = query(collection(db, 'categories'), where('parentId', '==', currentParentId));
-          const childrenSnapshot = await getDocs(q);
-          
-          for (const childDoc of childrenSnapshot.docs) {
-            const childData = childDoc.data();
-            // Re-slugify the child's own name to get its local slug part
-            const childLocalSlug = slugify(childData.name); 
-            const newChildSlug = `${currentParentSlug}/${childLocalSlug}`;
-            
-            const childRef = doc(db, 'categories', childDoc.id);
-            batch.update(childRef, { slug: newChildSlug });
-
-            // Recurse for grandchildren
-            await updateDescendants(childDoc.id, newChildSlug);
-          }
-        };
-
-        await updateDescendants(categoryId, newSlug);
-        await batch.commit();
-      }
+      
+      await updateDoc(categoryRef, updatedData);
 
       clearCategoriesCache();
 
@@ -216,6 +186,20 @@ export default function EditCategoryPage() {
                     <FormControl>
                       <Input {...field} disabled={isSubmitting} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL Slug (Optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={isSubmitting} />
+                    </FormControl>
+                     <FormDescription>If left blank, the slug will be generated from the name.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -279,6 +263,55 @@ export default function EditCategoryPage() {
                   </FormItem>
                 )}
               />
+               <Card>
+                <CardHeader>
+                    <CardTitle>SEO Details</CardTitle>
+                    <CardDescription>Optimize this category for search engines.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="metaTitle"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Title (Optional)</FormLabel>
+                            <FormControl>
+                            <Input {...field} disabled={isSubmitting} value={field.value || ''} />
+                            </FormControl>
+                            <FormDescription>The title that appears in browser tabs and search results.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="metaDescription"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Description (Optional)</FormLabel>
+                            <FormControl>
+                            <Textarea {...field} disabled={isSubmitting} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="keywords"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Keywords (Optional)</FormLabel>
+                            <FormControl>
+                            <Input {...field} disabled={isSubmitting} value={field.value || ''} />
+                            </FormControl>
+                            <FormDescription>Comma-separated keywords for search engines.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </CardContent>
+              </Card>
               <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" onClick={() => router.push('/admin/categories')} disabled={isSubmitting}>
                   Cancel
