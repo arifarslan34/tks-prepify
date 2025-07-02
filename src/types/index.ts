@@ -21,6 +21,7 @@ export interface Paper {
   questionCount: number;
   duration: number; // in minutes
   year?: number;
+  session?: string;
   featured?: boolean;
   published?: boolean;
   // SEO fields

@@ -52,6 +52,7 @@ const paperFormSchema = z.object({
     message: "Please enter a positive duration in minutes.",
   }),
   year: z.coerce.number().int().optional(),
+  session: z.string().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   keywords: z.string().optional(),
@@ -91,6 +92,7 @@ export default function EditPaperPage() {
                 form.reset({
                     ...paper,
                     year: paper.year || undefined,
+                    session: paper.session || undefined,
                     published: paper.published || false,
                 });
             } else {
@@ -113,6 +115,7 @@ export default function EditPaperPage() {
     const title = form.getValues("title");
     const categoryId = form.getValues("categoryId");
     const rawYear = form.getValues("year");
+    const session = form.getValues("session");
 
     let year: number | undefined = undefined;
     if (rawYear && String(rawYear).trim()) {
@@ -131,7 +134,7 @@ export default function EditPaperPage() {
 
     setIsGeneratingDesc(true);
     try {
-        const result = await generatePaperDescription({ title, categoryName, year });
+        const result = await generatePaperDescription({ title, categoryName, year, session });
         form.setValue("description", result.description, { shouldValidate: true });
         toast({ title: "Description Generated", description: "AI has created a description for you." });
     } catch (error) {
@@ -147,6 +150,7 @@ export default function EditPaperPage() {
     const description = form.getValues("description");
     const categoryId = form.getValues("categoryId");
     const rawYear = form.getValues("year");
+    const session = form.getValues("session");
 
     let year: number | undefined = undefined;
     if (rawYear && String(rawYear).trim()) {
@@ -165,7 +169,7 @@ export default function EditPaperPage() {
 
     setIsGeneratingSeo(true);
     try {
-        const result = await generatePaperSeoDetails({ title, description, categoryName, year });
+        const result = await generatePaperSeoDetails({ title, description, categoryName, year, session });
         form.setValue("keywords", result.keywords, { shouldValidate: true });
         form.setValue("metaTitle", result.metaTitle, { shouldValidate: true });
         form.setValue("metaDescription", result.metaDescription, { shouldValidate: true });
@@ -186,6 +190,7 @@ export default function EditPaperPage() {
           ...data,
           slug: slugify(data.slug || data.title),
           published: data.published || false,
+          session: data.session || null,
       };
       await updateDoc(paperRef, paperData);
       toast({
@@ -330,7 +335,7 @@ export default function EditPaperPage() {
                         </FormItem>
                         )}
                     />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                         <FormField
                             control={form.control}
                             name="questionCount"
@@ -367,6 +372,31 @@ export default function EditPaperPage() {
                                 <FormControl>
                                 <Input type="number" {...field} value={field.value ?? ''} disabled={isSubmitting} />
                                 </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="session"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Session (Optional)</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select a session" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="">None</SelectItem>
+                                        <SelectItem value="Fall">Fall</SelectItem>
+                                        <SelectItem value="Spring">Spring</SelectItem>
+                                        <SelectItem value="Summer">Summer</SelectItem>
+                                        <SelectItem value="Special">Special</SelectItem>
+                                        <SelectItem value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <FormMessage />
                             </FormItem>
                             )}

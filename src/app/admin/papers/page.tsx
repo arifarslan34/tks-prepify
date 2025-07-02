@@ -227,6 +227,7 @@ export default function AdminPapersPage() {
                          <TableCell className="text-muted-foreground text-sm">
                             <div>{paper.questionCount} questions</div>
                             <div>{paper.duration} min</div>
+                            {paper.session && <div>{paper.session}</div>}
                         </TableCell>
                         <TableCell className="text-center">
                             <Switch

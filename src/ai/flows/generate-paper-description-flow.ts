@@ -15,6 +15,7 @@ const GeneratePaperDescriptionInputSchema = z.object({
   title: z.string().describe('The title of the question paper.'),
   categoryName: z.string().describe('The full path/name of the category the paper belongs to (e.g., "Science / Physics").'),
   year: z.number().optional().describe('The year the paper was published, if available.'),
+  session: z.string().optional().describe('The session of the paper (e.g., Fall, Spring), if available.'),
 });
 export type GeneratePaperDescriptionInput = z.infer<typeof GeneratePaperDescriptionInputSchema>;
 
@@ -35,7 +36,8 @@ const prompt = ai.definePrompt({
 
 Paper Title: {{{title}}}
 Category: {{{categoryName}}}
-{{#if year}}Year: {{{year}}}{{/if}}`,
+{{#if year}}Year: {{{year}}}{{/if}}
+{{#if session}}Session: {{{session}}}{{/if}}`,
 });
 
 const generatePaperDescriptionFlow = ai.defineFlow(

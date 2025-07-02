@@ -16,6 +16,7 @@ const GeneratePaperSeoDetailsInputSchema = z.object({
   description: z.string().describe('The description of the question paper.'),
   categoryName: z.string().describe('The full path/name of the category the paper belongs to (e.g., "Science / Physics").'),
   year: z.number().optional().describe('The year the paper was published, if available.'),
+  session: z.string().optional().describe('The session of the paper (e.g., Fall, Spring), if available.'),
 });
 export type GeneratePaperSeoDetailsInput = z.infer<typeof GeneratePaperSeoDetailsInputSchema>;
 
@@ -40,6 +41,7 @@ Paper Title: {{{title}}}
 Paper Description: {{{description}}}
 Category: {{{categoryName}}}
 {{#if year}}Year: {{{year}}}{{/if}}
+{{#if session}}Session: {{{session}}}{{/if}}
 
 Generate a comma-separated list of keywords, a meta title, and a meta description. The meta title should be compelling and under 60 characters. The meta description should be engaging and under 160 characters.`,
 });

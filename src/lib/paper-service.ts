@@ -21,6 +21,7 @@ function docToPaper(doc: DocumentData): Paper {
         questionCount: data.questionCount || 0,
         duration: data.duration || 0,
         year: data.year,
+        session: data.session,
         featured: data.featured || false,
         published: data.published || false,
         keywords: data.keywords,
