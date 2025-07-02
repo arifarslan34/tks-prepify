@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter, useParams } from "next/navigation";
@@ -20,27 +20,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PlusCircle, Trash2 } from "lucide-react";
 import { getPaperById } from "@/lib/data";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 
 const questionFormSchema = z.object({
-  questionText: z.string().min(10, "Question text must be at least 10 characters."),
+  questionText: z.string().min(10, { message: "Question text must be at least 10 characters." }),
   type: z.enum(['mcq', 'short_answer']),
-  options: z.string().optional(),
-  correctAnswer: z.string().min(1, "Correct answer is required."),
-  explanation: z.string().min(10, "Explanation must be at least 10 characters."),
+  options: z.array(z.object({ text: z.string().min(1, { message: "Option text cannot be empty." }) })).optional(),
+  correctAnswer: z.string().min(1, { message: "A correct answer must be provided." }),
+  explanation: z.string().optional(),
 }).refine(data => {
     if (data.type === 'mcq') {
-        return !!data.options && data.options.split('\n').filter(opt => opt.trim() !== '').length >= 2;
+        return data.options && data.options.length >= 2;
     }
     return true;
 }, {
-    message: "MCQ questions must have at least 2 options, one per line.",
+    message: "MCQ questions must have at least 2 options.",
     path: ["options"],
 }).refine(data => {
-    if (data.type === 'mcq' && data.options) {
-        const optionsArray = data.options.split('\n').map(opt => opt.trim()).filter(opt => opt !== '');
-        return optionsArray.includes(data.correctAnswer.trim());
+    if (data.type === 'mcq' && data.options && data.correctAnswer) {
+        return data.options.some(opt => opt.text === data.correctAnswer);
     }
     return true;
 }, {
@@ -63,10 +64,15 @@ export default function NewQuestionPage() {
     defaultValues: {
       type: 'mcq',
       questionText: '',
-      options: '',
+      options: [{ text: "" }, { text: "" }],
       correctAnswer: '',
       explanation: '',
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "options"
   });
 
   const questionType = form.watch("type");
@@ -104,7 +110,13 @@ export default function NewQuestionPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Question Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      if (value === 'mcq' && fields.length === 0) {
+                        append({ text: '' });
+                        append({ text: '' });
+                      }
+                    }} defaultValue={field.value}>
                         <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a question type" />
@@ -135,47 +147,79 @@ export default function NewQuestionPage() {
               />
               
               {questionType === 'mcq' && (
-                <FormField
+                <div className="space-y-4 rounded-md border p-4">
+                  <FormField
                     control={form.control}
-                    name="options"
+                    name="correctAnswer"
                     render={({ field }) => (
-                    <FormItem>
+                      <FormItem className="space-y-3">
                         <FormLabel>Options</FormLabel>
+                        <FormDescription>Add at least 2 options and select one as the correct answer.</FormDescription>
                         <FormControl>
-                        <Textarea placeholder="Paris\nLondon\nBerlin\nMadrid" {...field} />
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="space-y-2"
+                          >
+                            {fields.map((item, index) => {
+                               const optionValue = form.watch(`options.${index}.text`);
+                               return (
+                                <FormField
+                                  key={item.id}
+                                  control={form.control}
+                                  name={`options.${index}.text`}
+                                  render={({ field: optionField }) => (
+                                    <FormItem className="flex items-center gap-2">
+                                      <FormControl>
+                                        <RadioGroupItem value={optionValue} id={`${item.id}-radio`} />
+                                      </FormControl>
+                                      <Input {...optionField} placeholder={`Option ${index + 1}`} className="flex-grow" />
+                                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 2}>
+                                          <Trash2 className="h-4 w-4" />
+                                          <span className="sr-only">Remove option</span>
+                                      </Button>
+                                    </FormItem>
+                                  )}
+                                />
+                              )
+                            })}
+                          </RadioGroup>
                         </FormControl>
-                        <FormDescription>Enter one option per line.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
+                         <FormMessage />
+                      </FormItem>
                     )}
-                />
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => append({ text: "" })}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Option
+                  </Button>
+                </div>
               )}
 
-              <FormField
-                control={form.control}
-                name="correctAnswer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correct Answer</FormLabel>
-                    <FormControl>
-                      <Input placeholder={questionType === 'mcq' ? 'e.g., Paris' : 'Enter the exact correct answer...'} {...field} />
-                    </FormControl>
-                     <FormDescription>
-                       For MCQs, this must exactly match one of the options above.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {questionType === 'short_answer' && (
+                <FormField
+                  control={form.control}
+                  name="correctAnswer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Correct Answer</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter the exact correct answer..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
                <FormField
                 control={form.control}
                 name="explanation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Explanation</FormLabel>
+                    <FormLabel>Explanation (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Provide a detailed explanation for the correct answer..." {...field} />
+                      <Textarea placeholder="Provide a detailed explanation for the correct answer..." {...field} value={field.value || ''}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
