@@ -24,7 +24,7 @@ import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { fetchCategories, getFlattenedCategories, getCategoryPath, getCategoryById } from "@/lib/category-service";
 import { getPaperById } from "@/lib/paper-service";
-import type { Category, Paper } from "@/types";
+import type { Category } from "@/types";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { slugify } from "@/lib/utils";
@@ -94,11 +94,14 @@ export default function CopyPaperPage() {
                 form.reset({
                     ...sourcePaper,
                     title: `Copy of ${sourcePaper.title}`,
-                    slug: '', // Reset slug
-                    published: false, // Default to not published
-                    featured: false, // Default to not featured
+                    slug: '', // Reset slug to be regenerated
+                    published: false, // Default new copy to not published
+                    featured: false, // Default new copy to not featured
                     year: sourcePaper.year || undefined,
-                    session: sourcePaper.session || 'none',
+                    session: sourcePaper.session || 'none', // Use 'none' for empty selection
+                    metaTitle: sourcePaper.metaTitle || '',
+                    metaDescription: sourcePaper.metaDescription || '',
+                    keywords: sourcePaper.keywords || '',
                 });
             } else {
                 toast({ title: "Error", description: "Source paper not found.", variant: "destructive" });
