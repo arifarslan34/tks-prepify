@@ -22,12 +22,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { fetchCategories, getFlattenedCategories, clearCategoriesCache, getDescendantCategoryIds } from "@/lib/category-service";
 import type { Category } from "@/types";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { slugify } from "@/lib/utils";
+import { generateSeoDetails } from "@/ai/flows/generate-seo-flow";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -55,6 +56,7 @@ export default function EditCategoryPage() {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
@@ -148,6 +150,47 @@ export default function EditCategoryPage() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleGenerateSeo() {
+    const categoryName = form.getValues("name");
+    const categoryDescription = form.getValues("description");
+
+    if (!categoryName || !categoryDescription) {
+        toast({
+            title: "Name and Description required",
+            description: "Please fill in the category name and description before generating SEO details.",
+            variant: "destructive",
+        });
+        return;
+    }
+    
+    setIsGeneratingSeo(true);
+    try {
+        const result = await generateSeoDetails({
+            name: categoryName,
+            description: categoryDescription,
+        });
+
+        form.setValue("keywords", result.keywords, { shouldValidate: true });
+        form.setValue("metaTitle", result.metaTitle, { shouldValidate: true });
+        form.setValue("metaDescription", result.metaDescription, { shouldValidate: true });
+        
+        toast({
+            title: "SEO Details Generated",
+            description: "AI has filled in the SEO fields for you.",
+        });
+
+    } catch (error) {
+        console.error("Error generating SEO details:", error);
+        toast({
+            title: "Generation Failed",
+            description: "Could not generate SEO details at this time. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsGeneratingSeo(false);
     }
   }
 
@@ -265,8 +308,16 @@ export default function EditCategoryPage() {
               />
                <Card>
                 <CardHeader>
-                    <CardTitle>SEO Details</CardTitle>
-                    <CardDescription>Optimize this category for search engines.</CardDescription>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>SEO Details</CardTitle>
+                            <CardDescription>Optimize this category for search engines.</CardDescription>
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={handleGenerateSeo} disabled={isGeneratingSeo || isSubmitting}>
+                            {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            Generate with AI
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <FormField
