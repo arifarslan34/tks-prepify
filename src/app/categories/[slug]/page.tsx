@@ -33,7 +33,7 @@ export default function CategoryPage() {
 
     if (loading) {
         return (
-          <div className="container mx-auto px-16 py-8 md:py-12 text-center flex justify-center items-center min-h-[50vh]">
+          <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-8 md:py-12 text-center flex justify-center items-center min-h-[50vh]">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         );
@@ -44,7 +44,7 @@ export default function CategoryPage() {
 
     if (!category) {
         return (
-            <div className="container mx-auto px-16 py-8 md:py-12 text-center">
+            <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-8 md:py-12 text-center">
                 <h1 className="text-2xl font-bold">Category not found</h1>
                 <Link href="/categories" className="mt-4 inline-block">
                     <Button>Back to Categories</Button>
@@ -62,17 +62,17 @@ export default function CategoryPage() {
     }
 
     return (
-        <div className="container mx-auto px-16 py-8 md:py-12">
+        <div className="container mx-auto px-6 sm:px-10 lg:px-16 py-8 md:py-12">
             {/* Breadcrumbs */}
-            <div className="flex items-center text-sm text-muted-foreground mb-4">
+            <div className="flex items-center text-sm text-muted-foreground mb-6">
                 <Link href="/" className="hover:text-primary">Home</Link>
-                <ChevronRight className="h-4 w-4 mx-1" />
+                <ChevronRight className="h-4 w-4 mx-1.5" />
                 <Link href="/categories" className="hover:text-primary">Categories</Link>
                 {categoryPath?.map((p, index) => {
                     const isLast = index === categoryPath.length - 1;
                     return (
                         <React.Fragment key={p.id}>
-                            <ChevronRight className="h-4 w-4 mx-1" />
+                            <ChevronRight className="h-4 w-4 mx-1.5" />
                             {isLast ? (
                                 <span className="text-foreground font-medium">{p.name}</span>
                             ) : (
@@ -88,7 +88,7 @@ export default function CategoryPage() {
             <div className="mb-12">
                 <h1 className="text-4xl font-bold font-headline">{category.name}</h1>
                 {category.description && (
-                    <p className="mt-2 text-lg text-muted-foreground max-w-3xl">{category.description}</p>
+                    <p className="mt-4 text-muted-foreground max-w-4xl leading-relaxed">{category.description}</p>
                 )}
             </div>
 
@@ -103,15 +103,17 @@ export default function CategoryPage() {
                                 <Link key={sub.id} href={`/categories/${sub.id}-${slugify(sub.name)}`} className="group">
                                     <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 h-full hover:border-primary">
                                         <CardContent className="p-6 flex flex-col h-full">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <h3 className="text-xl font-semibold pr-2">{sub.name}</h3>
-                                                <Folder className="w-7 h-7 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                                            <div className="flex-grow">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <h3 className="text-xl font-semibold pr-2">{sub.name}</h3>
+                                                    <Folder className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <FileText className="w-4 h-4" />
+                                                    <span>{paperCount} Paper{paperCount !== 1 ? 's' : ''}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                                                <FileText className="w-4 h-4" />
-                                                <span>{paperCount} Paper{paperCount !== 1 ? 's' : ''}</span>
-                                            </div>
-                                            <div className="mt-auto">
+                                            <div className="mt-6">
                                                 <div className="flex items-center font-semibold text-primary">
                                                     Explore Category
                                                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
