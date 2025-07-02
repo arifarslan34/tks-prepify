@@ -10,7 +10,7 @@ export default function Home() {
     <>
       {/* Hero Section */}
       <section className="bg-card">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold font-headline leading-tight">
               Unlock Exam Insights with <span className="text-primary">AI-Powered</span> Solved Papers
@@ -41,7 +41,7 @@ export default function Home() {
       </section>
 
       {/* Categories Section */}
-      <section id="categories" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+      <section id="categories" className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore by Category</h2>
           <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
@@ -65,7 +65,7 @@ export default function Home() {
 
       {/* Latest Papers Section */}
       <section className="bg-card">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 md:py-24">
           <div className="flex justify-between items-center mb-12">
             <div className="text-left">
               <h2 className="text-3xl md:text-4xl font-bold font-headline">Latest Question Papers</h2>

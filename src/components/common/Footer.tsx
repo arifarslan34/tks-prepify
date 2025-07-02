@@ -4,7 +4,7 @@ import { BookOpen } from 'lucide-react';
 export function Footer() {
   return (
     <footer className="bg-card border-t">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:px-6">
+      <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-8">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
             <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-2">

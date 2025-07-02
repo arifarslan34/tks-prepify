@@ -7,7 +7,7 @@ import { BookOpen } from 'lucide-react';
 
 export default function LoginPage() {
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] bg-background p-4">
+    <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] bg-background p-6">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center gap-2 mb-4">

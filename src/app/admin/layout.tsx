@@ -79,7 +79,7 @@ export default function AdminLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="flex items-center justify-between p-4 h-16 border-b sticky top-0 bg-background z-10">
+          <header className="flex items-center justify-between px-6 md:px-10 h-16 border-b sticky top-0 bg-background z-10">
             <div className="flex items-center gap-4">
                 <div className="md:hidden">
                     <SidebarTrigger />
@@ -118,9 +118,9 @@ export default function AdminLayout({
               </DropdownMenu>
             </div>
           </header>
-          <main className="p-4 sm:p-6 md:p-8 bg-muted/40 min-h-[calc(100vh-4rem)]">
+          <div className="p-6 md:p-10 bg-muted/40 min-h-[calc(100vh-4rem)]">
             {children}
-          </main>
+          </div>
         </SidebarInset>
     </SidebarProvider>
   );

@@ -41,7 +41,7 @@ export default function SolvedPaperPage({ params }: Props) {
   const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-8 md:py-12">
       <div className="mb-8">
         <Button variant="outline" onClick={() => router.back()} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
