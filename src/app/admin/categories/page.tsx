@@ -16,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
 import { papers, getFlattenedCategories, getDescendantCategoryIds } from "@/lib/data";
+import Link from "next/link";
 
 export default function AdminCategoriesPage() {
   const flatCategories = getFlattenedCategories();
@@ -29,9 +30,11 @@ export default function AdminCategoriesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Manage Categories</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Category
+        <Button asChild>
+          <Link href="/admin/categories/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Category
+          </Link>
         </Button>
       </div>
       <Card>

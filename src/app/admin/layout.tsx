@@ -1,5 +1,5 @@
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarTrigger, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutDashboard, FileText, Folder, Home } from 'lucide-react';
+import { LayoutDashboard, FileText, Folder, Home, Users } from 'lucide-react';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,14 @@ export default function AdminLayout({
                   <Link href="/admin/categories">
                     <Folder />
                     Categories
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/admin/users">
+                    <Users />
+                    Users
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

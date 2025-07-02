@@ -17,15 +17,18 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { papers, getCategoryPath } from "@/lib/data";
+import Link from "next/link";
 
 export default function AdminPapersPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Manage Papers</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Paper
+        <Button asChild>
+          <Link href="/admin/papers/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Paper
+          </Link>
         </Button>
       </div>
       <Card>
