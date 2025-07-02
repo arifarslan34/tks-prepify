@@ -1,12 +1,15 @@
 
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { papers } from '@/lib/data';
+import { fetchPapers } from '@/lib/paper-service';
 import { fetchCategories, getDescendantCategoryIds } from '@/lib/category-service';
 import { ArrowRight, Folder, FileText } from 'lucide-react';
 
 export default async function CategoriesPage() {
-  const allTopLevelCategories = await fetchCategories();
+  const [allTopLevelCategories, allPapers] = await Promise.all([
+    fetchCategories(),
+    fetchPapers(),
+  ]);
 
   return (
     <div className="container mx-auto px-16 py-16 md:py-24">
@@ -17,7 +20,7 @@ export default async function CategoriesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {allTopLevelCategories.length > 0 ? (
           allTopLevelCategories.map((category) => {
-            const paperCount = papers.filter(p => getDescendantCategoryIds(category.id, allTopLevelCategories).includes(p.categoryId)).length;
+            const paperCount = allPapers.filter(p => getDescendantCategoryIds(category.id, allTopLevelCategories).includes(p.categoryId) && p.published).length;
             const subCategoryCount = category.subcategories?.length || 0;
 
             return (

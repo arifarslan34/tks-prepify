@@ -75,7 +75,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {featuredCategories.length > 0 ? (
             featuredCategories.map((category) => {
-              const paperCount = allPapers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId)).length;
+              const paperCount = allPapers.filter(p => getDescendantCategoryIds(category.id, allCategories).includes(p.categoryId) && p.published).length;
               const subCategoryCount = category.subcategories?.length || 0;
 
               return (

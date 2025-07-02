@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { papers as allPapers } from '@/lib/data';
+import { fetchPapers } from '@/lib/paper-service';
 import { Folder, FileText, ArrowRight, ChevronRight, CalendarDays, HelpCircle } from 'lucide-react';
 import type { Category } from '@/types';
 import { fetchCategories, getCategoryBySlug, getCategoryPath, getDescendantCategoryIds } from '@/lib/category-service';
@@ -12,8 +12,11 @@ import { fetchCategories, getCategoryBySlug, getCategoryPath, getDescendantCateg
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
     const slug = params.slug;
 
-    // Fetch all categories on the server.
-    const allCategories = await fetchCategories();
+    // Fetch all categories and papers on the server.
+    const [allCategories, allPapers] = await Promise.all([
+        fetchCategories(),
+        fetchPapers(),
+    ]);
     
     const category = getCategoryBySlug(slug, allCategories);
     
@@ -31,11 +34,11 @@ export default async function CategoryPage({ params }: { params: { slug: string 
     const categoryPath = getCategoryPath(category.id, allCategories);
 
     const subCategories = category.subcategories || [];
-    const papersInCategory = allPapers.filter(p => p.categoryId === category.id);
+    const papersInCategory = allPapers.filter(p => p.categoryId === category.id && p.published);
 
     const getPaperCount = (catId: string) => {
         const descendantIds = getDescendantCategoryIds(catId, allCategories);
-        return allPapers.filter(paper => descendantIds.includes(paper.categoryId)).length;
+        return allPapers.filter(paper => descendantIds.includes(paper.categoryId) && paper.published).length;
     }
 
     return (
