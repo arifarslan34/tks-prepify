@@ -4,16 +4,12 @@ import { db } from './firebase';
 import type { Category, Paper } from '@/types';
 import { Atom, Calculator, Briefcase, Languages } from 'lucide-react';
 
-// NOTE: This is a simple in-memory cache. In a real-world application,
-// you might want to use a more sophisticated caching strategy or Next.js's
-// data caching features.
-let categoriesCache: Category[] | null = null;
-let lastFetchTime = 0;
-const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
+// NOTE: Caching is now handled by Next.js's data caching features.
+// The previous in-memory cache caused inconsistencies between server and client environments.
 
 export function clearCategoriesCache() {
-  categoriesCache = null;
-  lastFetchTime = 0;
+  // This is now a no-op as we are not using in-memory cache.
+  // Kept for compatibility to avoid breaking calls to it.
 }
 
 const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
@@ -30,14 +26,8 @@ type FirestoreCategory = Omit<Category, 'icon' | 'subcategories'> & {
 
 /**
 * Fetches all categories from Firestore and builds a nested tree structure.
-* Uses a simple in-memory cache to avoid redundant database calls.
 */
 export async function fetchCategories(): Promise<Category[]> {
-  const now = Date.now();
-  if (categoriesCache && (now - lastFetchTime < CACHE_DURATION)) {
-    return categoriesCache;
-  }
-
   const categoriesCol = collection(db, 'categories');
   const categorySnapshot = await getDocs(categoriesCol);
   const categoryList: (Category & { parentId?: string | null })[] = categorySnapshot.docs.map(doc => {
@@ -51,7 +41,7 @@ export async function fetchCategories(): Promise<Category[]> {
     };
   });
 
-  const categoryMap = new Map(categoryList.map(c => [c.id, { ...c, subcategories: [] }]));
+  const categoryMap = new Map(categoryList.map(c => [c.id, { ...c, subcategories: [] as Category[] }]));
   const tree: Category[] = [];
 
   for (const category of categoryList) {
@@ -59,15 +49,13 @@ export async function fetchCategories(): Promise<Category[]> {
     if (category.parentId) {
       const parent = categoryMap.get(category.parentId);
       if (parent) {
-        parent.subcategories!.push(mappedCategory);
+        parent.subcategories.push(mappedCategory);
       }
     } else {
       tree.push(mappedCategory);
     }
   }
 
-  categoriesCache = tree;
-  lastFetchTime = now;
   return tree;
 }
 
