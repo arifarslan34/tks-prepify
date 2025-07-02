@@ -85,7 +85,12 @@ export default function CategoryPage() {
                 })}
             </div>
 
-            <h1 className="text-4xl font-bold font-headline mb-12">{category.name}</h1>
+            <div className="mb-12">
+                <h1 className="text-4xl font-bold font-headline">{category.name}</h1>
+                {category.description && (
+                    <p className="mt-2 text-lg text-muted-foreground max-w-3xl">{category.description}</p>
+                )}
+            </div>
 
             {/* Sub-categories */}
             {subCategories.length > 0 && (
