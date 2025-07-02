@@ -16,7 +16,7 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
         <Sidebar collapsible="icon" variant="sidebar">
-          <SidebarHeader>
+          <SidebarHeader className="px-4 py-2">
             <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
               <BookOpen className="h-6 w-6 text-primary" />
               <span className="font-headline group-data-[collapsible=icon]:hidden">Prepify</span>
