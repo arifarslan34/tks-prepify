@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { papers, getFlattenedCategories, getDescendantCategoryIds, getCategoryById } from '@/lib/data';
 import { Search, Bookmark, Clock, ListChecks } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function PapersPage() {
   const searchParams = useSearchParams();
@@ -56,7 +57,16 @@ export default function PapersPage() {
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             {flatCategories.map(cat => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              <SelectItem 
+                key={cat.id} 
+                value={cat.id}
+                className={cn(
+                  cat.isParent && "font-bold"
+                )}
+                style={{ paddingLeft: `${2 + cat.level * 1.5}rem` }}
+              >
+                {cat.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

@@ -36,14 +36,14 @@ export function getDescendantCategoryIds(startId: string): string[] {
 }
 
 // Helper to get a flattened list of categories for UI elements like select dropdowns
-export function getFlattenedCategories(cats: Category[] = categories): { id: string; name: string }[] {
-  const flat: { id: string; name: string }[] = [];
+export function getFlattenedCategories(cats: Category[] = categories): { id:string; name: string; level: number; isParent: boolean }[] {
+  const flat: { id: string; name: string; level: number; isParent: boolean }[] = [];
   function recurse(categories: Category[], level: number) {
     for (const category of categories) {
-      const { subcategories, ...rest } = category;
-      flat.push({ ...rest, name: `${'  '.repeat(level * 2)}${rest.name}` });
-      if (subcategories) {
-        recurse(subcategories, level + 1);
+      const hasSubcategories = !!category.subcategories && category.subcategories.length > 0;
+      flat.push({ id: category.id, name: category.name, level, isParent: hasSubcategories });
+      if (hasSubcategories) {
+        recurse(category.subcategories, level + 1);
       }
     }
   }
@@ -142,7 +142,7 @@ export const questions: Question[] = [
   
   // Calculus I (paper6)
   { id: 'q26', paperId: 'paper6', questionText: 'What is the derivative of x^2?', options: ['2x', 'x', 'x^2/2', '2'], correctAnswer: '2x', explanation: 'Using the power rule, the derivative of x^n is n*x^(n-1).' },
-  { id: 'q27', paperId: 'paper6', questionText: 'What does the integral of a function represent?', options: ['The slope of the tangent line', 'The rate of change', 'The area under the curve', 'The maximum value'], correctAnswer: 'The area under the curve', explanation: 'A definite integral of a function gives the area between the function\'s curve and the x-axis.' },
+  { id: 'q27', paperId: 'paper6', 'questionText': 'What does the integral of a function represent?', 'options': ['The slope of the tangent line', 'The rate of change', 'The area under the curve', 'The maximum value'], 'correctAnswer': 'The area under the curve', 'explanation': 'A definite integral of a function gives the area between the function\'s curve and the x-axis.' },
   { id: 'q28', paperId: 'paper6', questionText: 'What is the derivative of sin(x)?', options: ['cos(x)', '-sin(x)', '-cos(x)', 'tan(x)'], correctAnswer: 'cos(x)', explanation: 'The derivative of sin(x) with respect to x is cos(x).' },
   { id: 'q29', paperId: 'paper6', questionText: 'What is the value of the limit of (x^2 - 1)/(x - 1) as x approaches 1?', options: ['0', '1', '2', 'Does not exist'], correctAnswer: '2', explanation: 'Factor the numerator to (x-1)(x+1) and cancel the (x-1) term. Then substitute x=1 into (x+1) to get 2.' },
   { id: 'q30', paperId: 'paper6', questionText: 'What rule is used to find the derivative of a product of two functions?', options: ['Chain Rule', 'Quotient Rule', 'Product Rule', 'Power Rule'], correctAnswer: 'Product Rule', explanation: 'The product rule is d/dx(uv) = u(dv/dx) + v(du/dx).' },
