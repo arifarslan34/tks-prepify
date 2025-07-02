@@ -22,8 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { getPaperById, getQuestionById } from "@/lib/data";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const mcqSchema = z.object({
     type: z.literal('mcq'),
@@ -179,14 +180,22 @@ export default function EditQuestionPage() {
                   <FormDescription>
                     Add your options below and check the box for each correct answer.
                   </FormDescription>
-                   <div className="space-y-3">
+
+                  <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-4 gap-y-2">
+                    {/* Grid Header */}
+                    <Label className="text-sm font-medium text-muted-foreground justify-self-center">Is/Are correct option(s)</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Option Text</Label>
+                    <span />
+
+                    {/* Grid Rows */}
                     {fields.map((item, index) => (
-                      <div key={item.id} className="flex items-center gap-4">
+                      <React.Fragment key={item.id}>
                         <FormField
                             control={form.control}
                             // @ts-ignore
                             name="correctAnswers"
                             render={({ field }) => (
+                                <div className="flex justify-center">
                                 <Checkbox
                                     // @ts-ignore
                                     checked={field.value?.includes(form.getValues(`options.${index}.text`))}
@@ -202,6 +211,7 @@ export default function EditQuestionPage() {
                                         }
                                     }}
                                 />
+                                </div>
                             )}
                         />
                         <FormField
@@ -236,9 +246,10 @@ export default function EditQuestionPage() {
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Remove option</span>
                         </Button>
-                      </div>
+                      </React.Fragment>
                     ))}
                   </div>
+
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ text: "" })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Option
