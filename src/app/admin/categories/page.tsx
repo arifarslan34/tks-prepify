@@ -1,3 +1,9 @@
+
+"use client";
+
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -14,95 +20,224 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus, Loader2 } from "lucide-react";
 import { papers } from "@/lib/data";
-import { fetchCategories, getFlattenedCategories, getDescendantCategoryIds } from "@/lib/category-service";
-import Link from "next/link";
+import { fetchCategories, getFlattenedCategories, getDescendantCategoryIds, clearCategoriesCache, getCategoryById } from "@/lib/category-service";
+import type { Category } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-export default async function AdminCategoriesPage() {
-  const allCategories = await fetchCategories();
-  const flatCategories = getFlattenedCategories(allCategories);
+type FlatCategory = ReturnType<typeof getFlattenedCategories>[0] & { raw: Category };
+
+export default function AdminCategoriesPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<FlatCategory | null>(null);
+
+  const loadCategories = useCallback(async () => {
+    setLoading(true);
+    const cats = await fetchCategories();
+    setAllCategories(cats);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  const flatCategories: FlatCategory[] = useMemo(() => {
+    const flattened = getFlattenedCategories(allCategories);
+    return flattened.map(flatCat => ({
+        ...flatCat,
+        raw: getCategoryById(flatCat.id, allCategories)!
+    }));
+  }, [allCategories]);
 
   const getPaperCount = (categoryId: string) => {
     const descendantIds = getDescendantCategoryIds(categoryId, allCategories);
     return papers.filter(paper => descendantIds.includes(paper.categoryId)).length;
   }
 
+  const openDeleteDialog = (category: FlatCategory) => {
+    setCategoryToDelete(category);
+    setDeleteAlertOpen(true);
+  }
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    setIsDeleting(true);
+
+    const hasSubcategories = categoryToDelete.raw.subcategories && categoryToDelete.raw.subcategories.length > 0;
+    const hasPapers = getPaperCount(categoryToDelete.id) > 0;
+
+    if (hasSubcategories || hasPapers) {
+        let errorMessage = "This category cannot be deleted because it contains ";
+        if (hasSubcategories && hasPapers) {
+            errorMessage += "sub-categories and papers.";
+        } else if (hasSubcategories) {
+            errorMessage += "sub-categories.";
+        } else {
+            errorMessage += "papers.";
+        }
+        
+        toast({
+            title: "Deletion Failed",
+            description: errorMessage,
+            variant: "destructive"
+        });
+        setIsDeleting(false);
+        setDeleteAlertOpen(false);
+        return;
+    }
+
+    try {
+        await deleteDoc(doc(db, "categories", categoryToDelete.id));
+        toast({
+            title: "Category Deleted",
+            description: `"${categoryToDelete.name}" has been successfully deleted.`
+        });
+        
+        clearCategoriesCache();
+        await loadCategories(); // Refetch data
+        router.refresh();
+
+    } catch (error) {
+        console.error("Error deleting category:", error);
+        toast({
+            title: "Error",
+            description: "Failed to delete the category. Please try again.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsDeleting(false);
+        setDeleteAlertOpen(false);
+    }
+  }
+  
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center h-full min-h-[calc(100vh-20rem)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    )
+  }
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Manage Categories</h1>
-        <Button asChild>
-          <Link href="/admin/categories/new">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Category
-          </Link>
-        </Button>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Categories</CardTitle>
-          <CardDescription>A list of all categories and subcategories.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60%]">Name</TableHead>
-                <TableHead>Papers</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {flatCategories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell 
-                    className="font-medium"
-                    style={{ paddingLeft: `${1 + category.level * 2}rem` }}
-                  >
-                    {category.name}
-                  </TableCell>
-                  <TableCell>
-                    {getPaperCount(category.id)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/categories/new?parentId=${category.id}`}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Subcategory
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem disabled>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive" disabled>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+    <>
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Manage Categories</h1>
+          <Button asChild>
+            <Link href="/admin/categories/new">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add New Category
+            </Link>
+          </Button>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Categories</CardTitle>
+            <CardDescription>A list of all categories and subcategories.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[60%]">Name</TableHead>
+                  <TableHead>Papers</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {flatCategories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell 
+                      className="font-medium"
+                      style={{ paddingLeft: `${1 + category.level * 2}rem` }}
+                    >
+                      {category.name}
+                    </TableCell>
+                    <TableCell>
+                      {getPaperCount(category.id)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                           <DropdownMenuItem asChild>
+                            <Link href={`/admin/categories/new?parentId=${category.id}`}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Subcategory
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/categories/${category.id}/edit`}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-destructive" 
+                            onSelect={() => openDeleteDialog(category)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                category "{categoryToDelete?.name}".
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCategory} disabled={isDeleting}>
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+  </>
   )
 }
