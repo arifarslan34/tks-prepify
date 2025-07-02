@@ -64,26 +64,37 @@ export default function SolvedPaperPage({ params }: Props) {
                 </div>
                 <div className="flex-grow w-full">
                   <p className="font-semibold text-lg mb-4">{question.questionText}</p>
-                  <div className="space-y-2 mb-4">
-                    {question.options.map((option, optIndex) => (
-                      <div
-                        key={optIndex}
-                        className={cn(
-                          'flex items-center gap-3 p-3 rounded-md border',
-                          option === question.correctAnswer
-                            ? 'bg-chart-2/20 border-chart-2'
-                            : 'bg-card'
-                        )}
-                      >
-                        {option === question.correctAnswer ? (
-                          <CheckCircle2 className="h-5 w-5 text-chart-2 flex-shrink-0" />
-                        ) : (
-                          <div className="h-5 w-5 flex-shrink-0" />
-                        )}
-                        <span className="text-base">{option}</span>
-                      </div>
-                    ))}
-                  </div>
+                  
+                  {question.type === 'mcq' && question.options && (
+                    <div className="space-y-2 mb-4">
+                      {question.options.map((option, optIndex) => (
+                        <div
+                          key={optIndex}
+                          className={cn(
+                            'flex items-center gap-3 p-3 rounded-md border',
+                            option === question.correctAnswer
+                              ? 'bg-chart-2/20 border-chart-2'
+                              : 'bg-card'
+                          )}
+                        >
+                          {option === question.correctAnswer ? (
+                            <CheckCircle2 className="h-5 w-5 text-chart-2 flex-shrink-0" />
+                          ) : (
+                            <div className="h-5 w-5 flex-shrink-0" />
+                          )}
+                          <span className="text-base">{option}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {question.type === 'short_answer' && (
+                    <div className="mb-4 p-4 rounded-md border bg-green-600/10 border-green-600">
+                        <p className="font-semibold text-green-700">Correct Answer</p>
+                        <p className="text-card-foreground mt-1">{question.correctAnswer}</p>
+                    </div>
+                  )}
+                  
                   <div className="flex items-start gap-3 p-3 rounded-md bg-secondary/50">
                      <Lightbulb className="h-5 w-5 text-accent-foreground flex-shrink-0 mt-1" />
                      <div>

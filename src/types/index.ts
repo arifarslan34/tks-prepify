@@ -19,7 +19,8 @@ export interface Question {
   id: string;
   paperId: string;
   questionText: string;
-  options: string[];
+  type: 'mcq' | 'short_answer';
+  options?: string[]; // Only for MCQ
   correctAnswer: string;
   explanation: string;
 }

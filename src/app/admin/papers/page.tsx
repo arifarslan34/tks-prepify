@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
 import { papers, getCategoryPath } from "@/lib/data";
 import Link from "next/link";
 
@@ -70,11 +70,15 @@ export default function AdminPapersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                           <DropdownMenuItem disabled>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add/Edit Questions
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" disabled>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
