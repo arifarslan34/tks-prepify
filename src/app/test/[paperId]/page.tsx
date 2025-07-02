@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { papers, questions as allQuestions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle2, Lightbulb } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +18,9 @@ export default function SolvedPaperPage({ params }: Props) {
   const paper = papers.find(p => p.id === params.paperId);
   const questions = allQuestions.filter(q => q.paperId === params.paperId);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const questionsPerPage = 2;
+
   if (!paper || questions.length === 0) {
     return (
       <div className="container mx-auto text-center py-20">
@@ -26,6 +30,14 @@ export default function SolvedPaperPage({ params }: Props) {
       </div>
     );
   }
+
+  const totalPages = Math.ceil(questions.length / questionsPerPage);
+  const startIndex = (currentPage - 1) * questionsPerPage;
+  const endIndex = startIndex + questionsPerPage;
+  const currentQuestions = questions.slice(startIndex, endIndex);
+
+  const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
   return (
     <div className="container mx-auto py-8 md:py-12">
@@ -44,11 +56,11 @@ export default function SolvedPaperPage({ params }: Props) {
           <CardDescription>Review the questions and their correct answers below.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          {questions.map((question, index) => (
+          {currentQuestions.map((question, index) => (
             <div key={question.id}>
               <div className="flex flex-col sm:flex-row items-start gap-4">
                 <div className="flex-shrink-0 flex-grow-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">
-                  {index + 1}
+                  {startIndex + index + 1}
                 </div>
                 <div className="flex-grow w-full">
                   <p className="font-semibold text-lg mb-4">{question.questionText}</p>
@@ -81,10 +93,25 @@ export default function SolvedPaperPage({ params }: Props) {
                   </div>
                 </div>
               </div>
-              {index < questions.length - 1 && <Separator className="mt-8" />}
+              {index < currentQuestions.length - 1 && <Separator className="mt-8" />}
             </div>
           ))}
         </CardContent>
+        {totalPages > 1 && (
+            <CardFooter className="flex justify-between items-center border-t pt-6">
+                <Button onClick={goToPreviousPage} disabled={currentPage === 1} variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                </span>
+                <Button onClick={goToNextPage} disabled={currentPage === totalPages} variant="outline">
+                    Next
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            </CardFooter>
+        )}
       </Card>
     </div>
   );

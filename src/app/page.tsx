@@ -13,10 +13,10 @@ export default function Home() {
         <div className="container mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold font-headline leading-tight">
-              Master Your Exams with <span className="text-primary">AI-Powered</span> Practice
+              Unlock Exam Insights with <span className="text-primary">AI-Powered</span> Solved Papers
             </h1>
             <p className="text-lg text-muted-foreground">
-              Prepify offers a vast library of question papers, timed tests, and personalized feedback to help you achieve your academic goals.
+              Prepify offers a vast library of solved question papers, complete with AI-powered explanations and personalized feedback to help you ace your exams.
             </p>
             <div className="flex gap-4">
               <Button size="lg" asChild>
