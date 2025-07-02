@@ -1,63 +1,21 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { papers, questions as allQuestions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, ArrowRight, Clock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ArrowLeft, CheckCircle2, Lightbulb } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 type Props = {
   params: { paperId: string };
 };
 
-export default function TestPage({ params }: Props) {
+export default function SolvedPaperPage({ params }: Props) {
   const router = useRouter();
   const paper = papers.find(p => p.id === params.paperId);
   const questions = allQuestions.filter(q => q.paperId === params.paperId);
-
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<string[]>(new Array(questions.length).fill(''));
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    if(paper) {
-      setTimeLeft(paper.duration * 60)
-    }
-  }, [paper]);
-  
-  useEffect(() => {
-    if (!paper || !isMounted) return;
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prevTime => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          submitTest();
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [paper, isMounted]);
-
-  const submitTest = () => {
-    const testId = `test_${params.paperId}_${Date.now()}`; 
-    localStorage.setItem('latestTestResults', JSON.stringify({ paperId: params.paperId, answers }));
-    router.push(`/results/${testId}`);
-  };
-
-  if (!isMounted) {
-    return null; // or a loading skeleton
-  }
 
   if (!paper || questions.length === 0) {
     return (
@@ -69,89 +27,63 @@ export default function TestPage({ params }: Props) {
     );
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-
-  const handleAnswerChange = (value: string) => {
-    const newAnswers = [...answers];
-    newAnswers[currentQuestionIndex] = value;
-    setAnswers(newAnswers);
-  };
-
-  const goToNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    }
-  };
-
-  const goToPrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
-  };
-
   return (
-    <div className="container mx-auto py-8 md:py-12 flex justify-center items-start">
-      <Card className="w-full max-w-4xl">
+    <div className="container mx-auto py-8 md:py-12">
+      <div className="mb-8">
+        <Button variant="outline" onClick={() => router.back()} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        <h1 className="text-4xl font-bold font-headline">{paper.title}</h1>
+        <p className="text-lg text-muted-foreground mt-2">{paper.description}</p>
+      </div>
+      
+      <Card>
         <CardHeader>
-          <div className="flex justify-between items-center mb-4">
-            <CardTitle className="text-xl md:text-2xl">{paper.title}</CardTitle>
-            <div className="flex items-center gap-2 font-medium text-accent-foreground bg-accent/20 px-3 py-1.5 rounded-full">
-              <Clock className="h-5 w-5" />
-              <span>{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
-            </div>
-          </div>
-          <Progress value={progress} className="w-full" />
-          <p className="text-sm text-muted-foreground mt-2 text-right">
-            Question {currentQuestionIndex + 1} of {questions.length}
-          </p>
+          <CardTitle>Questions & Answers</CardTitle>
+          <CardDescription>Review the questions and their correct answers below.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="prose max-w-none">
-            <h2 className="text-lg md:text-xl font-semibold mb-6">{currentQuestion.questionText}</h2>
-          </div>
-          <RadioGroup 
-            value={answers[currentQuestionIndex]}
-            onValueChange={handleAnswerChange} 
-            className="space-y-4"
-          >
-            {currentQuestion.options.map((option, index) => (
-              <div key={index} className="flex items-center space-x-3 p-4 border rounded-lg has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
-                <RadioGroupItem value={option} id={`option-${index}`} />
-                <Label htmlFor={`option-${index}`} className="text-base flex-1 cursor-pointer">{option}</Label>
+        <CardContent className="space-y-8">
+          {questions.map((question, index) => (
+            <div key={question.id}>
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <div className="flex-shrink-0 flex-grow-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">
+                  {index + 1}
+                </div>
+                <div className="flex-grow w-full">
+                  <p className="font-semibold text-lg mb-4">{question.questionText}</p>
+                  <div className="space-y-2 mb-4">
+                    {question.options.map((option, optIndex) => (
+                      <div
+                        key={optIndex}
+                        className={cn(
+                          'flex items-center gap-3 p-3 rounded-md border',
+                          option === question.correctAnswer
+                            ? 'bg-chart-2/20 border-chart-2'
+                            : 'bg-card'
+                        )}
+                      >
+                        {option === question.correctAnswer ? (
+                          <CheckCircle2 className="h-5 w-5 text-chart-2 flex-shrink-0" />
+                        ) : (
+                          <div className="h-5 w-5 flex-shrink-0" />
+                        )}
+                        <span className="text-base">{option}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-secondary/50">
+                     <Lightbulb className="h-5 w-5 text-accent-foreground flex-shrink-0 mt-1" />
+                     <div>
+                        <p className="font-semibold">Explanation</p>
+                        <p className="text-muted-foreground">{question.explanation}</p>
+                     </div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </RadioGroup>
-
-          <div className="mt-8 flex justify-between items-center">
-            <Button variant="outline" onClick={goToPrevious} disabled={currentQuestionIndex === 0}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-            </Button>
-            
-            {currentQuestionIndex === questions.length - 1 ? (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button>Submit Test</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to submit?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      You cannot change your answers after submitting. Any unanswered questions will be marked as incorrect.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogAction onClick={submitTest}>Submit</AlertDialogAction>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            ) : (
-              <Button onClick={goToNext}>
-                Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            )}
-          </div>
+              {index < questions.length - 1 && <Separator className="mt-8" />}
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

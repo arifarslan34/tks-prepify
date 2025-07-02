@@ -95,7 +95,7 @@ export default function Home() {
                 </CardContent>
                 <div className="p-6 pt-0">
                   <Button className="w-full" asChild>
-                    <Link href={`/test/${paper.id}`}>Start Test</Link>
+                    <Link href={`/test/${paper.id}`}>View Paper</Link>
                   </Button>
                 </div>
               </Card>

@@ -85,7 +85,7 @@ export default function PapersPage() {
               </CardContent>
               <div className="p-6 pt-0">
                 <Button asChild className="w-full">
-                  <Link href={`/test/${paper.id}`}>Start Test</Link>
+                  <Link href={`/test/${paper.id}`}>View Paper</Link>
                 </Button>
               </div>
             </Card>
