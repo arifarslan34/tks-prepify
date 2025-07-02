@@ -203,6 +203,7 @@ export default function AdminPapersPage() {
                       <TableHead className="w-[35%]">Title</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Details</TableHead>
+                      <TableHead>Year & Session</TableHead>
                       <TableHead className="text-center">Published</TableHead>
                       <TableHead className="text-center">Featured</TableHead>
                       <TableHead>
@@ -227,6 +228,9 @@ export default function AdminPapersPage() {
                          <TableCell className="text-muted-foreground text-sm">
                             <div>{paper.questionCount} questions</div>
                             <div>{paper.duration} min</div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                            {paper.year && <div>{paper.year}</div>}
                             {paper.session && <div>{paper.session}</div>}
                         </TableCell>
                         <TableCell className="text-center">
@@ -283,7 +287,7 @@ export default function AdminPapersPage() {
                     )
                 }) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
+                      <TableCell colSpan={7} className="h-24 text-center">
                         No papers found. Try adjusting your filters.
                       </TableCell>
                     </TableRow>
@@ -315,5 +319,4 @@ export default function AdminPapersPage() {
     </>
   )
 }
-
     
