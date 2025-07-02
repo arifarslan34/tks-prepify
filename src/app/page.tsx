@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { categories, papers, getCategoryById } from '@/lib/data';
-import { ArrowRight, Bookmark } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { categories, papers, getCategoryById, getDescendantCategoryIds } from '@/lib/data';
+import { ArrowRight, Bookmark, FileText, Folder } from 'lucide-react';
 import Image from 'next/image';
 
 export default function Home() {
@@ -16,7 +16,7 @@ export default function Home() {
               Excel in Your Tests with <span className="text-primary">Expertly Solved</span> Question Papers
             </h1>
             <p className="text-lg text-muted-foreground">
-              Prepify offers a vast library of solved question papers, complete with detailed explanations and practice tools to help you ace your exams.
+              Prepify offers a vast library of solved question papers, complete with detailed explanations and practice tools to help you excel in your exams.
             </p>
             <div className="flex gap-4">
               <Button size="lg" asChild>
@@ -47,19 +47,51 @@ export default function Home() {
           <p className="text-lg text-muted-foreground mt-2">Find question papers tailored to your subjects of interest.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {categories.map((category) => (
-            <Link key={category.id} href={`/papers?category=${category.id}`}>
-              <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 group">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  {category.icon && <category.icon className="w-8 h-8 text-primary" />}
-                  <CardTitle>{category.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{category.description}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {categories.slice(0, 4).map((category) => {
+              const paperCount = papers.filter(p => getDescendantCategoryIds(category.id).includes(p.categoryId)).length;
+              const subCategoryCount = category.subcategories?.length || 0;
+
+              return (
+                <Link key={category.id} href={`/papers?category=${category.id}`} className="group">
+                  <Card className="hover:shadow-lg hover:-translate-y-1 transition-transform duration-300 h-full hover:border-primary">
+                    <CardContent className="p-6 flex flex-col h-full">
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-xl font-semibold pr-2">{category.name}</h3>
+                        <Folder className="w-7 h-7 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                      </div>
+                      <div className="space-y-2 text-sm text-muted-foreground flex-grow">
+                        {subCategoryCount > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Folder className="w-4 h-4" />
+                            <span>{subCategoryCount} Sub-categor{subCategoryCount > 1 ? 'ies' : 'y'}</span>
+                          </div>
+                        )}
+                        {paperCount > 0 && (
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            <span>{paperCount} Paper{paperCount > 1 ? 's' : ''}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-auto pt-4">
+                        <div className="flex items-center font-semibold text-primary">
+                          Explore Category
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
+        </div>
+        <div className="text-center mt-12">
+          <Button asChild size="lg" variant="outline">
+              <Link href="/categories">
+                  Browse All Categories
+                  <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+          </Button>
         </div>
       </section>
 
@@ -80,10 +112,10 @@ export default function Home() {
               const category = getCategoryById(paper.categoryId);
               return (
               <Card key={paper.id} className="flex flex-col">
-                <CardHeader>
+                <CardContent className="p-6">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle>{paper.title}</CardTitle>
+                      <h3 className="text-xl font-bold">{paper.title}</h3>
                       <p className="text-sm text-muted-foreground mt-1">{category?.name || ''}</p>
                     </div>
                     <Button variant="ghost" size="icon" className="shrink-0">
@@ -91,11 +123,9 @@ export default function Home() {
                       <span className="sr-only">Bookmark</span>
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-muted-foreground">{paper.description}</p>
+                  <p className="text-muted-foreground mt-4 flex-grow">{paper.description}</p>
                 </CardContent>
-                <div className="p-6 pt-0">
+                <div className="px-6 pb-6">
                   <Button className="w-full" asChild>
                     <Link href={`/test/${paper.id}`}>View Paper</Link>
                   </Button>
